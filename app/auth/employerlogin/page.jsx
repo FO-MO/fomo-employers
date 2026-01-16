@@ -3,11 +3,13 @@ import Link from 'next/link'
 
 export default function EmployerLogin() {
   return (
-    <div className='min-h-screen w-screen flex flex-col'>
+    <div className='min-h-screen flex flex-col'>
       {/* Full-width header */}
-      <div className='w-full border-b border-gray-300 bg-teal-900 py-4 px-8'>
-        <h1 className='text-white text-xl font-bold'>ConnectEd</h1>
-      </div>
+      <Link href="/">
+        <div className="w-full border-b border-gray-300 py-4 px-12">
+          <h1 className="text-black text-3xl font-bold">FOOMO</h1>
+        </div>
+      </Link>
 
       {/* Centered login form */}
       <div className='flex flex-1 justify-center items-center mb-4  mt-4'>
@@ -204,6 +206,20 @@ export default function EmployerLogin() {
               Create Account
             </button>
           </form>
+          <div className='mt-6 flex items-center'>
+            <div className='flex-grow border-t border-gray-300'></div>
+            <span className='mx-4 text-gray-500 text-sm'>
+              Already have an account?
+            </span>
+            <div className='flex-grow border-t border-gray-300'></div>
+          </div>
+
+          <Link
+            href='/auth/login'
+            className='mt-4 w-full inline-block text-center border border-teal-900 text-teal-700 bg-white py-2 rounded-md hover:bg-teal-900 hover:text-white transition-colors duration-200'
+          >
+            Login
+          </Link>
         </div>
       </div>
     </div>
