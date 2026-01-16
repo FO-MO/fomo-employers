@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import SubBar from "@/components/subBar";
 import {
   Search,
@@ -13,8 +13,13 @@ import {
   CheckCircle2,
   XCircle,
   Building2,
+  X,
 } from "lucide-react";
 import { fetchFromBackend } from "@/lib/tools";
+import { fetchData } from "@/lib/strapi/strapiData";
+import { getAuthTokenCookie } from "@/lib/cookies";
+import SearchCard, { Profile } from "@/components/student-section/SearchCard";
+import { useRouter } from "next/navigation";
 
 interface ApplicationStat {
   data: {
@@ -25,6 +30,7 @@ interface ApplicationStat {
 }
 
 export default function ApplicationsPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [collegeFilter, setCollegeFilter] = useState("All Colleges");
@@ -33,6 +39,7 @@ export default function ApplicationsPage() {
   const [applicationsData, setApplicationsData] = useState<
     ApplicationStat[] | null
   >(null);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,8 +48,46 @@ export default function ApplicationsPage() {
       try {
         setLoading(true);
         setError(null);
+        
+        // Fetch application stats
         const res = await fetchFromBackend("employerapplications?populate=*");
+        console.log("Fetched applications data:", res);
         setApplicationsData(res);
+
+        // Fetch student profiles
+        const token = getAuthTokenCookie();
+        const data = (await fetchData(
+          token,
+          "student-profiles?populate=*"
+        )) as {
+          data?: Array<{
+            id?: string | number;
+            documentId?: string;
+            studentId?: string;
+            name?: string;
+            email?: string;
+            college?: string;
+            skills?: string[];
+            followers?: unknown[];
+            following?: unknown[];
+          }>;
+        };
+
+        const fetchedProfiles: Profile[] = (data.data || []).map((student) => ({
+          id: Number(student.id) || 0,
+          documentId: student.documentId?.toString(),
+          studentId: student.studentId || "unknown",
+          name: student.name || "Unknown User",
+          email: student.email || "No email",
+          college: student.college || "",
+          skills: student.skills || [],
+          followers: (student.followers || []).map(String),
+          following: (student.following || []).map(String),
+          isFollowing: false,
+          avatarUrl: null,
+        }));
+
+        setProfiles(fetchedProfiles);
       } catch (err) {
         console.error("Failed to load applications:", err);
         setError("Failed to load applications data");
@@ -61,6 +106,54 @@ export default function ApplicationsPage() {
       setCgpaFilter("");
     }
   };
+
+  // Filter profiles based on search and filters
+  const filteredProfiles = useMemo(() => {
+    let filtered = profiles;
+
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const query = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (profile: Profile) =>
+          profile.name.toLowerCase().includes(query) ||
+          profile.email?.toLowerCase().includes(query) ||
+          profile.skills?.some((skill: string) =>
+            skill.toLowerCase().includes(query)
+          )
+      );
+    }
+
+    // Filter by college
+    if (collegeFilter !== "All Colleges") {
+      filtered = filtered.filter(
+        (profile: Profile) => profile.college === collegeFilter
+      );
+    }
+
+    // Filter by skill
+    if (skillFilter !== "All Skills") {
+      filtered = filtered.filter((profile: Profile) =>
+        profile.skills?.some(
+          (skill: string) =>
+            skill.toLowerCase() === skillFilter.toLowerCase()
+        )
+      );
+    }
+
+    return filtered;
+  }, [searchTerm, collegeFilter, skillFilter, profiles]);
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+  };
+
+  const handleProfileClick = (profile: Profile) => {
+    if (profile.documentId) {
+      router.push(`/profile?userId=${profile.studentId}`);
+    }
+  };
+  
   const icons = [
     <User2 key={1} className="h-5 w-5 text-gray-700" />, // Total
     <Clock key={2} className="h-5 w-5 text-yellow-500" />, // Pending
@@ -147,11 +240,20 @@ export default function ApplicationsPage() {
                   <Search className="h-4 w-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search applications..."
+                    placeholder="Search by name, email or skills..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full px-2 outline-none bg-transparent text-sm"
                   />
+                  {searchTerm && (
+                    <button
+                      onClick={handleClearSearch}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Filters */}
@@ -236,17 +338,53 @@ export default function ApplicationsPage() {
                     </select>
                   </div>
                 </div>
+
+                {/* Results Count */}
+                {searchTerm && (
+                  <div className="text-sm text-gray-600">
+                    Found{" "}
+                    <span className="font-semibold text-gray-900">
+                      {filteredProfiles.length}
+                    </span>{" "}
+                    result{filteredProfiles.length !== 1 ? "s" : ""} for &quot;
+                    {searchTerm}&quot;
+                  </div>
+                )}
               </div>
 
-              {/* No Applications */}
-              <div className="flex flex-col items-center justify-center bg-white p-12 rounded-lg border border-gray-100 shadow-sm">
-                <User2 className="h-10 w-10 text-gray-400" />
-                <p className="mt-3 text-lg font-semibold text-gray-700">
-                  No Applications Found
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  You haven&apos;t received any applications yet.
-                </p>
+              {/* Student Applications Grid */}
+              <div className="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredProfiles.length > 0 ? (
+                  filteredProfiles.map((profile: Profile) => (
+                    <div
+                      key={profile.id}
+                      onClick={() => handleProfileClick(profile)}
+                      className="transition-transform duration-300 ease-in-out hover:-translate-y-2 cursor-pointer"
+                    >
+                      <SearchCard
+                        profile={profile}
+                        onFollowToggle={(profileId) => {
+                          console.log("Follow toggled for profile:", profileId);
+                          // Handle follow/unfollow logic here
+                        }}
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full">
+                    <div className="flex flex-col items-center justify-center bg-white p-12 rounded-lg border border-gray-100 shadow-sm">
+                      <User2 className="h-10 w-10 text-gray-400" />
+                      <p className="mt-3 text-lg font-semibold text-gray-700">
+                        No Applications Found
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {searchTerm || collegeFilter !== "All Colleges" || skillFilter !== "All Skills"
+                          ? "Try adjusting your search or filters to find what you're looking for."
+                          : "You haven't received any applications yet."}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}
