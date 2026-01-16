@@ -2,60 +2,48 @@
 
 export const dynamic = "force-dynamic";
 
-import TopBar from "@/components/bars/topBar";
-import Hero1 from "@/components/hero/Hero1";
-import Hero2 from "@/components/hero/Hero2";
-import Hero3 from "@/components/hero/Hero3";
-import Hero4 from "@/components/hero/Hero4";
-import Hero5 from "@/components/hero/Hero5";
-import Footer from "@/components/bars/footer";
 import { useEffect, useState } from "react";
-import { getUserCookie } from "@/lib/cookies";
-
-// Safely access user data from cookies
-interface User {
-  username: string;
-  abbreviation: string;
-  userType: "student" | "college" | "employer";
-  loggedIn: boolean;
-}
-
-function useParsedUser() {
-  const [parsedUser, setParsedUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    try {
-      // Use cookies instead of localStorage
-      const userObj = getUserCookie();
-      if (userObj) {
-        const username = userObj.username || "User";
-        setParsedUser({
-          ...userObj,
-          username,
-          loggedIn: true,
-          userType: "student",
-          abbreviation: username.substring(0, 2).toUpperCase(),
-        });
-      }
-    } catch (e) {
-      console.warn("Failed to read user from cookies", e);
-    }
-  }, []);
-
-  return parsedUser;
-}
+import { useRouter } from "next/navigation";
+import { getUserCookie, getAuthTokenCookie } from "@/lib/cookies";
 
 export default function Home() {
-  const parsedUser = useParsedUser();
-  return (
-    <>
-      <TopBar theme="home" user={parsedUser} />
-      <Hero1 />
-      <Hero2 />
-      <Hero3 />
-      <Hero4 />
-      <Hero5 />
-      <Footer />
-    </>
-  );
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuthAndRedirect = () => {
+      try {
+        const userObj = getUserCookie();
+        const token = getAuthTokenCookie();
+
+        if (userObj && token) {
+          // User is logged in, redirect to employer dashboard
+          router.replace("/employers/overview");
+        } else {
+          // User is not logged in, redirect to login page
+          router.replace("/auth/login");
+        }
+      } catch (e) {
+        console.warn("Failed to check auth status", e);
+        // On error, redirect to login
+        router.replace("/auth/login");
+      }
+    };
+
+    checkAuthAndRedirect();
+  }, [router]);
+
+  // Show a loading state while redirecting
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
