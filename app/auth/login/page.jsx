@@ -118,7 +118,7 @@ export default function Login() {
           </div>
 
           <Link
-            href="/auth/signup"
+            href="/auth/employerlogin"
             className="mt-4 w-full inline-block text-center border border-teal-900 text-teal-700 bg-white py-2 rounded-md hover:bg-teal-900 hover:text-white transition-colors duration-200"
           >
             Sign Up
