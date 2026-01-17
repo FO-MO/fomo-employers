@@ -1,7 +1,55 @@
+"use client";
+
 import React from 'react'
 import Link from 'next/link'
+import { useRouter } from "next/navigation";
+import { strapiRegister, setAuthToken } from "@/lib/strapi/auth";
+import { setUserCookie } from "@/lib/cookies";
 
 export default function EmployerLogin() {
+  const [firstName, setFirstName] = React.useState("");
+  const [lastName, setLastName] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [companyName, setCompanyName] = React.useState("");
+  const [companyDescription, setCompanyDescription] = React.useState("");
+  const [industry, setIndustry] = React.useState("");
+  const [companySize, setCompanySize] = React.useState("");
+  const [website, setWebsite] = React.useState("");
+  const [location, setLocation] = React.useState("");
+  const [error, setError] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const username = email.split('@')[0];
+      const result = await strapiRegister(username, email, password);
+      
+      if (result?.error) {
+        setError(result.error.message || "Registration failed");
+        console.error("Sign up error:", result);
+      } else if (result?.jwt) {
+        setAuthToken(result.jwt);
+        setUserCookie(result.user);
+        // Redirect to employer profile setup
+        window.location.href = "/auth/employer-setup-profile";
+      } else {
+        setError("Unexpected registration response");
+        console.error("Unexpected registration response", result);
+      }
+    } catch (err) {
+      console.error(err);
+      setError("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className='min-h-screen flex flex-col'>
       {/* Full-width header */}
@@ -22,37 +70,47 @@ export default function EmployerLogin() {
             million verified students and alumni.
           </p>
 
-          <form action='#' method='POST' className='space-y-6'>
+          {error && (
+            <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm'>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className='space-y-6'>
             <div>
               <label
-                htmlFor='text'
+                htmlFor='firstName'
                 className='block text-sm font-medium text-gray-900'
               >
-                Frist name
+                First name
               </label>
               <input
-                id='text'
-                name='text'
+                id='firstName'
+                name='firstName'
                 type='text'
                 required
-                autoComplete='text'
+                autoComplete='given-name'
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
                 className='mt-2 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm'
               />
             </div>
 
             <div>
               <label
-                htmlFor='text'
+                htmlFor='lastName'
                 className='block text-sm font-medium text-gray-900'
               >
                 Last Name
               </label>
               <input
-                id='text'
-                name='text'
+                id='lastName'
+                name='lastName'
                 type='text'
                 required
-                autoComplete='text'
+                autoComplete='family-name'
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
                 className='mt-2 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm'
               />
             </div>
@@ -69,6 +127,8 @@ export default function EmployerLogin() {
                 type='email'
                 required
                 autoComplete='email'
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className='mt-2 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm'
               />
             </div>
@@ -85,42 +145,45 @@ export default function EmployerLogin() {
                 name='password'
                 type='password'
                 required
-                autoComplete='current-password'
+                autoComplete='new-password'
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className='mt-2 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm'
               />
             </div>
 
             <div>
               <label
-                htmlFor='text'
+                htmlFor='companyName'
                 className='block text-sm font-medium text-gray-900'
               >
                 Company name
               </label>
               <input
-                id='text'
-                name='text'
+                id='companyName'
+                name='companyName'
                 type='text'
                 required
-                autoComplete='text'
+                autoComplete='organization'
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
                 className='mt-2 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm'
               />
             </div>
 
             <div>
               <label
-                htmlFor='text'
+                htmlFor='companyDescription'
                 className='block text-sm font-medium text-gray-900'
               >
-                Company Description(optional)
+                Company Description (optional)
               </label>
               <textarea
-                id='text'
-                name='text'
-                type='text'
+                id='companyDescription'
+                name='companyDescription'
                 placeholder='Brief description of your company...'
-                required
-                autoComplete='text'
+                value={companyDescription}
+                onChange={(e) => setCompanyDescription(e.target.value)}
                 rows={4}
                 className='mt-2 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm'
               ></textarea>
@@ -128,68 +191,72 @@ export default function EmployerLogin() {
 
             <div>
               <label
-                htmlFor='text'
+                htmlFor='industry'
                 className='block text-sm font-medium text-gray-900'
               >
                 Industry (optional)
               </label>
               <input
-                id='text'
-                name='text'
+                id='industry'
+                name='industry'
                 type='text'
-                required
-                autoComplete='text'
+                autoComplete='off'
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
                 className='mt-2 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm'
               />
             </div>
 
             <div>
               <label
-                htmlFor='text'
+                htmlFor='companySize'
                 className='block text-sm font-medium text-gray-900'
               >
                 Company size (optional)
               </label>
               <input
-                id='text'
-                name='text'
+                id='companySize'
+                name='companySize'
                 type='text'
-                required
-                autoComplete='text'
+                autoComplete='off'
+                value={companySize}
+                onChange={(e) => setCompanySize(e.target.value)}
                 className='mt-2 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm'
               />
             </div>
 
             <div>
               <label
-                htmlFor='text'
+                htmlFor='website'
                 className='block text-sm font-medium text-gray-900'
               >
                 Website (optional)
               </label>
               <input
-                id='text'
-                name='text'
-                type='text'
-                required
-                autoComplete='text'
+                id='website'
+                name='website'
+                type='url'
+                autoComplete='url'
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
                 className='mt-2 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm'
               />
             </div>
 
             <div>
               <label
-                htmlFor='text'
+                htmlFor='location'
                 className='block text-sm font-medium text-gray-900'
               >
                 Location (optional)
               </label>
               <input
-                id='text'
-                name='text'
+                id='location'
+                name='location'
                 type='text'
-                required
-                autoComplete='text'
+                autoComplete='off'
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
                 className='mt-2 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm'
               />
             </div>
@@ -201,9 +268,10 @@ export default function EmployerLogin() {
 
             <button
               type='submit'
-              className='w-full flex justify-center rounded-md bg-teal-900 px-3 py-2 text-sm font-semibold text-white shadow hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700'
+              disabled={loading}
+              className='w-full flex justify-center rounded-md bg-teal-900 px-3 py-2 text-sm font-semibold text-white shadow hover:bg-teal-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50 disabled:cursor-not-allowed'
             >
-              Create Account
+              {loading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
           <div className='mt-6 flex items-center'>

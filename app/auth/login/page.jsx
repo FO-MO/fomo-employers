@@ -26,7 +26,7 @@ export default function Login() {
         setAuthToken(result.jwt);
         setUserCookie(result.user);
         // force full reload to ensure server components pick up cookies if needed
-        window.location.href = "/students";
+        window.location.href = "/employers/overview";
       } else {
         setError("Unexpected login response");
         console.error("Unexpected login response", result);
@@ -118,7 +118,7 @@ export default function Login() {
           </div>
 
           <Link
-            href="/auth/employerlogin"
+            href="/auth/signup"
             className="mt-4 w-full inline-block text-center border border-teal-900 text-teal-700 bg-white py-2 rounded-md hover:bg-teal-900 hover:text-white transition-colors duration-200"
           >
             Sign Up

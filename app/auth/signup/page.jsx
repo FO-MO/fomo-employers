@@ -116,7 +116,7 @@ export default function Signup() {
         name || email,
         email,
         password,
-        "student"
+        "student",
       );
       if (result?.error) {
         setError(result.error.message || "Registration failed");
@@ -126,7 +126,7 @@ export default function Signup() {
         setAuthToken(result.jwt);
         setUserCookie(result.user);
         setSuccess(true);
-        window.location.href = "/auth/setup-profile";
+        window.location.href = "/auth/employer-setup-profile";
       } else {
         // Strapi may require email confirmation depending on settings
         setSuccess(true);
@@ -287,12 +287,12 @@ export default function Signup() {
                           passwordStrength.color === "red"
                             ? "bg-red-500 w-1/4"
                             : passwordStrength.color === "orange"
-                            ? "bg-orange-500 w-2/4"
-                            : passwordStrength.color === "yellow"
-                            ? "bg-yellow-500 w-3/4"
-                            : passwordStrength.color === "green"
-                            ? "bg-green-500 w-full"
-                            : "bg-gray-300 w-0"
+                              ? "bg-orange-500 w-2/4"
+                              : passwordStrength.color === "yellow"
+                                ? "bg-yellow-500 w-3/4"
+                                : passwordStrength.color === "green"
+                                  ? "bg-green-500 w-full"
+                                  : "bg-gray-300 w-0"
                         }`}
                       ></div>
                     </div>
@@ -302,12 +302,12 @@ export default function Signup() {
                       passwordStrength.color === "red"
                         ? "text-red-600"
                         : passwordStrength.color === "orange"
-                        ? "text-orange-600"
-                        : passwordStrength.color === "yellow"
-                        ? "text-yellow-600"
-                        : passwordStrength.color === "green"
-                        ? "text-green-600"
-                        : "text-gray-500"
+                          ? "text-orange-600"
+                          : passwordStrength.color === "yellow"
+                            ? "text-yellow-600"
+                            : passwordStrength.color === "green"
+                              ? "text-green-600"
+                              : "text-gray-500"
                     }`}
                   >
                     {passwordStrength.message}
@@ -435,8 +435,8 @@ export default function Signup() {
               {loading
                 ? "Creating account..."
                 : success
-                ? "Account created!"
-                : "Sign Up"}
+                  ? "Account created!"
+                  : "Sign Up"}
             </button>
           </form>
           <div className="mt-6 flex items-center">
