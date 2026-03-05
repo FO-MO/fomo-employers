@@ -15,6 +15,7 @@ export type Profile = {
   graduationYear?: string
   location?: string
   skills?: string[]
+  cgpa?: number
   followers?: string[]
   following?: string[]
   isFollowing?: boolean
@@ -87,7 +88,7 @@ export default function SearchCard({ profile, onFollowToggle }: Props) {
               </button>
             </div>
 
-            {/* Followers and Following Stats */}
+            {/* Followers, Following and CGPA Stats */}
             <div className='flex items-center gap-4 mt-2'>
               <div className='text-xs'>
                 <span className='font-semibold text-gray-900'>
@@ -100,6 +101,12 @@ export default function SearchCard({ profile, onFollowToggle }: Props) {
                   {profile.following?.length ?? 0}
                 </span>
                 <span className='text-gray-600 ml-1'>following</span>
+              </div>
+              <div className='text-xs'>
+                <span className='font-semibold text-teal-600'>
+                  {typeof profile.cgpa === 'number' ? profile.cgpa.toFixed(2) : '-'}
+                </span>
+                <span className='text-gray-600 ml-1'>CGPA</span>
               </div>
             </div>
           </div>
