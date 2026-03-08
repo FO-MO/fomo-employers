@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 import DashboardNav from "@/components/DashboardNav";
 import HeroSection from "@/components/HeroSection";
 import FilterSidebar, { type Filters } from "@/components/FilterSidebar";
@@ -29,6 +30,24 @@ export default function OverviewPage() {
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [search, setSearch] = useState("");
   const [collegePlacementOnly, setCollegePlacementOnly] = useState(false);
+
+  const handlePostJob = async () => {
+    try {
+      console.log("Post Job clicked: navigating to /employers/post-job");
+      router.push("/employers/post-job");
+    } catch (err) {
+      console.error("Navigation error to /employers/post-job", err);
+    }
+  };
+
+  const handleCollegePlacement = async () => {
+    try {
+      console.log("College Placement clicked: navigating to /employers/college-placement");
+      router.push("/employers/college-placement");
+    } catch (err) {
+      console.error("Navigation error to /employers/college-placement", err);
+    }
+  };
 
   const toggleShortlist = (id: string) => {
     setShortlistedIds((prev) => {
@@ -73,7 +92,7 @@ export default function OverviewPage() {
         {(activeTab === "dashboard" || activeTab === "candidates") && (
           <>
             {activeTab === "dashboard" && (
-              <HeroSection onPostJob={() => router.push("/employers/post-job")} onCollegePlacement={() => router.push("/employers/college-placement")} />
+              <HeroSection onPostJob={handlePostJob} onCollegePlacement={handleCollegePlacement} />
             )}
 
             <div className="flex flex-col lg:flex-row gap-6">
@@ -136,12 +155,7 @@ export default function OverviewPage() {
 
         {activeTab === "insights" && <AIInsightsSection />}
 
-        {activeTab === "profile" && (
-          <div className="text-center py-16">
-            <h2 className="font-heading font-bold text-xl text-foreground mb-2">Company Profile</h2>
-            <p className="text-sm text-muted-foreground">Company profile settings coming soon.</p>
-          </div>
-        )}
+        {activeTab === "profile" && <CompanyProfileSection />}
       </main>
 
       {selectedCandidate && (
@@ -152,6 +166,51 @@ export default function OverviewPage() {
           onToggleShortlist={toggleShortlist}
         />
       )}
+    </div>
+  );
+}
+
+function CompanyProfileSection() {
+  const { employerProfile } = useAuth();
+
+  if (!employerProfile) {
+    return (
+      <div className="text-center py-16">
+        <h2 className="font-heading font-bold text-xl text-foreground mb-2">Company Profile</h2>
+        <p className="text-sm text-muted-foreground">No employer profile found. Set up your profile first.</p>
+      </div>
+    );
+  }
+
+
+  const Field = ({ label, value }: { label: string; value: string | null | undefined }) => (
+    <div className="space-y-1">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className="text-sm text-foreground">{value || "—"}</p>
+    </div>
+  );
+
+  
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex items-center">
+        <h2 className="font-heading font-bold text-xl text-foreground">Company Profile</h2>
+      </div>
+      <div className="bg-card rounded-2xl border border-border/60 p-6 space-y-5">
+        <Field label="Company Name" value={employerProfile.name} />
+        <div className="grid grid-cols-2 gap-6">
+          <Field label="Industry" value={employerProfile.industry} />
+          <Field label="Location" value={employerProfile.location} />
+        </div>
+        <Field label="Website" value={employerProfile.website} />
+        <Field label="Description" value={employerProfile.description} />
+        <Field label="Specialties" value={employerProfile.specialties} />
+        <div className="grid grid-cols-2 gap-6">
+          <Field label="Email" value={employerProfile.email} />
+          <Field label="Employees" value={employerProfile.no_of_employers?.toString()} />
+        </div>
+      </div>
     </div>
   );
 }

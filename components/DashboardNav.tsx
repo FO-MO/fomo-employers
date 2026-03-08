@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 import { LayoutDashboard, Users, Heart, Brain, Building2, LogOut, Menu, X } from "lucide-react";
 
 interface DashboardNavProps {
@@ -17,6 +19,22 @@ const navItems = [
 
 const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const router = useRouter();
+  const { employerProfile, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    router.push("/auth/login");
+  };
+
+  const initials = employerProfile?.name
+    ? employerProfile.name
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "EP";
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
@@ -41,9 +59,9 @@ const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
 
           <div className="hidden md:flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-semibold">
-              TC
+              {initials}
             </div>
-            <button className="nav-item nav-item-inactive">
+            <button onClick={handleLogout} className="nav-item nav-item-inactive">
               <LogOut className="h-4 w-4" />
               Logout
             </button>

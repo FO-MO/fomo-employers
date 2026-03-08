@@ -2,12 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock } from "lucide-react";
+import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardNav from "@/components/DashboardNav";
+import { useAuth } from "@/lib/auth-context";
+import { createGlobalJobPosting } from "@/lib/services/employers";
 
 export default function PostJobPage() {
   const router = useRouter();
+  const { user, employerProfile } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     department: "",
@@ -16,14 +21,37 @@ export default function PostJobPage() {
     salary: "",
     description: "",
     requirements: "",
-    openings: "1",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: submit to backend
-    alert("Job posted successfully!");
-    router.push("/employers/overview");
+    setError(null);
+    if (!user || !employerProfile) {
+      router.push("/auth/login");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      await createGlobalJobPosting({
+        employer_profile_id: employerProfile.id,
+        title: form.title,
+        department: form.department || null,
+        location: form.location || null,
+        type: form.type || null,
+        salary: form.salary ? parseInt(form.salary, 10) : null,
+        description: form.description || null,
+        requirements: form.requirements || null,
+      });
+
+      router.replace("/employers/overview");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to post job";
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -110,7 +138,7 @@ export default function PostJobPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
                   <DollarSign className="h-3.5 w-3.5" /> Salary (₹/yr)
@@ -120,17 +148,6 @@ export default function PostJobPage() {
                   placeholder="e.g. 600000"
                   value={form.salary}
                   onChange={(e) => setForm({ ...form, salary: e.target.value })}
-                  className="w-full bg-background rounded-xl border border-border/60 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-shadow"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">No. of Openings</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={form.openings}
-                  onChange={(e) => setForm({ ...form, openings: e.target.value })}
                   className="w-full bg-background rounded-xl border border-border/60 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-shadow"
                 />
               </div>
@@ -165,12 +182,19 @@ export default function PostJobPage() {
             </div>
           </section>
 
+          {error && (
+            <div className="bg-destructive/10 text-destructive text-sm rounded-xl px-4 py-3">
+              {error}
+            </div>
+          )}
+
           <div className="flex gap-3 pb-8">
             <Button type="button" variant="outline" className="flex-1" onClick={() => router.back()}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 font-semibold">
-              Post Requirement
+            <Button type="submit" className="flex-1 font-semibold" disabled={submitting}>
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {submitting ? "Posting..." : "Post Requirement"}
             </Button>
           </div>
         </form>
