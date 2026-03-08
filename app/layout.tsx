@@ -2,18 +2,17 @@
 
 export const dynamic = 'force-dynamic'
 
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Inter, Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
+import Providers from '@/components/Providers'
 
-//SEO NEEDS TO BE DONE...
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
 })
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: '--font-plus-jakarta-sans',
   subsets: ['latin'],
 })
 
@@ -107,31 +106,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang='en' className='h-full bg-white'>
+    <html lang='en' className='h-full'>
       <head>
         <link rel='icon' href='/favicon.ico?v=2' sizes='any' />
-        <link
-          rel='icon'
-          href='/favicon-16x16.png'
-          sizes='16x16'
-          type='image/png'
-        />
-        <link
-          rel='icon'
-          href='/favicon-32x32.png'
-          sizes='32x32'
-          type='image/png'
-        />
-        <link
-          rel='apple-touch-icon'
-          href='/apple-touch-icon.png'
-          sizes='180x180'
-        />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
+        className={`${inter.variable} ${plusJakartaSans.variable} antialiased h-full`}
       >
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   )
