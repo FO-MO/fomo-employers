@@ -23,9 +23,22 @@ export default function CollegePlacementPage() {
   const { user, employerProfile } = useAuth();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<CollegeProfile | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [colleges, setColleges] = useState<CollegeProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [partnering, setPartnering] = useState(false);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const [bulkForm, setBulkForm] = useState({
+    title: '',
+    department: '',
+    location: '',
+    type: 'Full-time',
+    salary: '',
+    description: '',
+    requirements: '',
+    deadline: '',
+  });
 
   useEffect(() => {
     listCollegeProfiles()
@@ -50,16 +63,7 @@ export default function CollegePlacementPage() {
       const employerData = await getOrCreateEmployerData(employerProfile.id);
       await createPartnership(employerData.id, college.id);
 
-      // Also create a college-specific job posting
-      await createCollegeJobPosting({
-        data: {
-          employer_profile_id: employerProfile.id,
-          company_name: employerProfile.name,
-          college_id: college.id,
-          college_name: college.college_name,
-        },
-      });
-
+      // Partnership created, send user to post job (they can choose college-specific posting there)
       setSelected(null);
       router.push("/employers/post-job");
     } catch {
@@ -68,6 +72,42 @@ export default function CollegePlacementPage() {
       router.push("/employers/post-job");
     } finally {
       setPartnering(false);
+    }
+  };
+
+  const handleBulkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !employerProfile) {
+      router.push('/auth/login');
+      return;
+    }
+
+    if (selectedIds.length === 0) return;
+
+    setBulkSubmitting(true);
+    try {
+      const selectedColleges = colleges.filter((c) => selectedIds.includes(c.id)).map((c) => ({ id: c.id, college_name: c.college_name }));
+
+      await createCollegeJobPosting({
+        employer_profile_id: employerProfile.id,
+        title: bulkForm.title,
+        department: bulkForm.department || null,
+        location: bulkForm.location || null,
+        type: bulkForm.type || null,
+        salary: bulkForm.salary ? parseInt(bulkForm.salary, 10) : null,
+        description: bulkForm.description || null,
+        requirements: bulkForm.requirements || null,
+        deadline: bulkForm.deadline || null,
+        colleges: selectedColleges,
+      });
+
+      setBulkModalOpen(false);
+      setSelectedIds([]);
+      router.replace('/employers/overview');
+    } catch (err) {
+      console.error('Failed to create college job posting', err);
+    } finally {
+      setBulkSubmitting(false);
     }
   };
 
@@ -103,6 +143,34 @@ export default function CollegePlacementPage() {
           />
         </div>
 
+        {/* Select All + Actions */}
+        <div className="flex items-center justify-between mb-4">
+          <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={selectedIds.length === colleges.length && colleges.length > 0}
+              onChange={(e) => {
+                if (e.target.checked) setSelectedIds(colleges.map((c) => c.id));
+                else setSelectedIds([]);
+              }}
+              className="h-4 w-4"
+            />
+            <span>Select all</span>
+          </label>
+
+          {selectedIds.length > 0 && (
+            <div className="text-sm">
+              <span className="text-muted-foreground mr-3">{selectedIds.length} selected</span>
+              <Button className="mr-2" onClick={() => setBulkModalOpen(true)}>
+                Post Drive to Selected
+              </Button>
+              <Button variant="outline" onClick={() => setSelectedIds([])}>
+                Clear
+              </Button>
+            </div>
+          )}
+        </div>
+
         <p className="text-sm text-muted-foreground mb-4">
           {loading ? "Loading colleges..." : <>Showing <span className="font-medium text-foreground">{filtered.length}</span> colleges</>}
         </p>
@@ -114,11 +182,23 @@ export default function CollegePlacementPage() {
         ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {filtered.map((college) => (
-            <button
+            <div
               key={college.id}
               onClick={() => setSelected(college)}
-              className="text-left bg-card border border-border/60 rounded-2xl p-5 hover:border-primary/40 hover:shadow-md transition-all group"
+              className="relative text-left bg-card border border-border/60 rounded-2xl p-5 hover:border-primary/40 hover:shadow-md transition-all group cursor-pointer"
             >
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(college.id)}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  setSelectedIds((prev) =>
+                    e.target.checked ? [...prev, college.id] : prev.filter((id) => id !== college.id)
+                  );
+                }}
+                className="absolute top-3 left-3 h-4 w-4"
+              />
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -151,7 +231,7 @@ export default function CollegePlacementPage() {
                   </span>
                 )}
               </div>
-            </button>
+            </div>
           ))}
 
           {filtered.length === 0 && (
@@ -224,6 +304,120 @@ export default function CollegePlacementPage() {
                 {partnering ? "Partnering..." : "Post Drive"}
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Post Modal */}
+      {bulkModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          onClick={() => setBulkModalOpen(false)}
+        >
+          <div
+            className="bg-card rounded-2xl border border-border/60 p-6 max-w-2xl w-full shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="font-heading text-lg font-bold mb-3">Post Drive to {selectedIds.length} colleges</h2>
+
+            <form onSubmit={handleBulkSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Job Title *</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="e.g. Frontend Developer"
+                    value={bulkForm.title}
+                    onChange={(e) => setBulkForm({ ...bulkForm, title: e.target.value })}
+                    className="w-full bg-background rounded-xl border border-border/60 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-shadow"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Department</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Engineering"
+                    value={bulkForm.department}
+                    onChange={(e) => setBulkForm({ ...bulkForm, department: e.target.value })}
+                    className="w-full bg-background rounded-xl border border-border/60 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-shadow"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Location *</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="e.g. Bangalore / Remote"
+                    value={bulkForm.location}
+                    onChange={(e) => setBulkForm({ ...bulkForm, location: e.target.value })}
+                    className="w-full bg-background rounded-xl border border-border/60 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-shadow"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Job Type</label>
+                  <select
+                    value={bulkForm.type}
+                    onChange={(e) => setBulkForm({ ...bulkForm, type: e.target.value })}
+                    className="w-full bg-background rounded-xl border border-border/60 px-3 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-shadow"
+                  >
+                    <option>Full-time</option>
+                    <option>Internship</option>
+                    <option>Part-time</option>
+                    <option>Contract</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Salary (₹/yr)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 600000"
+                  value={bulkForm.salary}
+                  onChange={(e) => setBulkForm({ ...bulkForm, salary: e.target.value })}
+                  className="w-full bg-background rounded-xl border border-border/60 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-shadow"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Description *</label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Describe the role and responsibilities..."
+                  value={bulkForm.description}
+                  onChange={(e) => setBulkForm({ ...bulkForm, description: e.target.value })}
+                  className="w-full bg-background rounded-xl border border-border/60 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-shadow resize-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Requirements</label>
+                <textarea
+                  rows={3}
+                  placeholder="List any specific requirements or qualifications..."
+                  value={bulkForm.requirements}
+                  onChange={(e) => setBulkForm({ ...bulkForm, requirements: e.target.value })}
+                  className="w-full bg-background rounded-xl border border-border/60 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-shadow resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button type="button" variant="outline" className="flex-1" onClick={() => setBulkModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="flex-1 font-semibold" disabled={bulkSubmitting}>
+                  {bulkSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {bulkSubmitting ? 'Posting...' : 'Post to Selected'}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

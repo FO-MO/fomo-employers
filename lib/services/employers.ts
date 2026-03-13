@@ -143,11 +143,22 @@ export async function deleteGlobalJobPosting(postingId: string) {
 // ─── College Job Postings ────────────────────────────────────────────
 
 export async function createCollegeJobPosting(payload: {
-  data: Record<string, unknown>;
+  employer_profile_id: string;
+  title: string;
+  department?: string | null;
+  location?: string | null;
+  type?: string | null;
+  salary?: number | null;
+  description?: string | null;
+  requirements?: string | null;
+  deadline?: string | null;
+  colleges?: unknown; // stored as jsonb in DB
 }) {
+  const now = new Date().toISOString();
+  const insertObj = { ...payload, published_at: now, updated_at: now };
   const { data, error } = await supabase
     .from('college_job_postings')
-    .insert([payload])
+    .insert([insertObj])
     .select()
     .single();
   if (error) throw error;
