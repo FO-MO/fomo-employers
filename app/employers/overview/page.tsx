@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import DashboardNav from "@/components/DashboardNav";
@@ -24,6 +24,13 @@ const defaultFilters: Filters = {
 
 export default function OverviewPage() {
   const router = useRouter();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/");
+    }
+  }, [loading, user, router]);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [shortlistedIds, setShortlistedIds] = useState<Set<string>>(new Set());

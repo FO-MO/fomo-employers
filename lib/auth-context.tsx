@@ -174,6 +174,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setEmployerProfile(null);
+    // Ensure the app navigates to the public home page after signing out
+    try {
+      router.push("/");
+    } catch (e) {
+      // ignore navigation errors
+    }
   };
 
   const refreshProfile = async () => {

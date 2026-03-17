@@ -63,9 +63,6 @@ export default function EmployerSetupProfilePage() {
       });
 
       console.log('createEmployerProfile response at caller:', resp);
-      if (resp.error) {
-        throw resp.error;
-      }
       console.log('createEmployerProfile succeeded');
       await refreshProfile();
       router.push("/employers/overview");

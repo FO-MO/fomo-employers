@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { LayoutDashboard, Users, Heart, Brain, Building2, LogOut, Menu, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface DashboardNavProps {
   activeTab: string;
@@ -22,9 +24,12 @@ const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
   const router = useRouter();
   const { employerProfile, signOut } = useAuth();
 
-  const handleLogout = async () => {
+  const [logoutOpen, setLogoutOpen] = useState(false);
+
+  const handleLogoutConfirmed = async () => {
+    setLogoutOpen(false);
     await signOut();
-    router.push("/auth/login");
+    router.push("/");
   };
 
   const initials = employerProfile?.name
@@ -61,10 +66,23 @@ const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-semibold">
               {initials}
             </div>
-            <button onClick={handleLogout} className="nav-item nav-item-inactive">
+            <button onClick={() => setLogoutOpen(true)} className="nav-item nav-item-inactive">
               <LogOut className="h-4 w-4" />
               Logout
             </button>
+
+            <Dialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Confirm Logout</DialogTitle>
+                  <DialogDescription>Are you sure you want to sign out? You will need to sign in again to access the dashboard.</DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setLogoutOpen(false)}>Cancel</Button>
+                  <Button className="ml-2" onClick={handleLogoutConfirmed}>Sign out</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <button

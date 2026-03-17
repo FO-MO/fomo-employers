@@ -1,4 +1,5 @@
 import supabase from '@/lib/supabaseClient';
+import type { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 // ─── Employer Profile ────────────────────────────────────────────────
 
@@ -29,11 +30,37 @@ export async function createEmployerProfile(payload: {
   phone_number?: number;
   country_code?: number;
 }) {
-  const resp = await supabase.from('employer_profiles').insert([payload]).select().single();
-  // Debug logging to help diagnose inserts
-  console.log('createEmployerProfile response:', resp);
-  // Return the full response so callers can inspect status/data/error
-  return resp;
+  // Use upsert on user_id to avoid unique constraint errors when profile already exists.
+  const now = new Date().toISOString();
+  const insertObj = { ...payload, updated_at: now };
+
+  console.log('createEmployerProfile: upserting employer_profiles with', insertObj);
+
+  try {
+    // guard against indefinitely hanging requests by applying a timeout
+    const supabaseCall = supabase
+      .from('employer_profiles')
+      .upsert([insertObj], { onConflict: 'user_id' })
+      .select()
+      .single();
+
+    const timeoutMs = 15000;
+    const timeoutPromise = new Promise((_res, rej) => setTimeout(() => rej(new Error('Supabase request timed out')), timeoutMs));
+
+    const resp = await Promise.race([supabaseCall, timeoutPromise]) as PostgrestSingleResponse<unknown>;
+    console.log('createEmployerProfile response:', resp);
+
+    // Normalize return shape similar to other service functions: throw on error, return data
+    if (resp?.error) {
+      console.error('createEmployerProfile error from supabase:', resp.error);
+      throw resp.error;
+    }
+
+    return resp?.data ?? resp;
+  } catch (err) {
+    console.error('createEmployerProfile caught error:', err);
+    throw err;
+  }
 }
 
 export async function updateEmployerProfile(
