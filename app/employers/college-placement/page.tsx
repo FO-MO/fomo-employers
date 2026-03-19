@@ -6,7 +6,13 @@ import { ArrowLeft, GraduationCap, Users, MapPin, Search, ChevronRight, Loader2 
 import { Button } from "@/components/ui/button";
 import DashboardNav from "@/components/DashboardNav";
 import { useAuth } from "@/lib/auth-context";
-import { listCollegeProfiles, getOrCreateEmployerData, createPartnership, createCollegeJobPosting } from "@/lib/services/employers";
+import {
+  listCollegeProfiles,
+  getOrCreateEmployerData,
+  createPartnership,
+  createCollegeJobPosting,
+  getEmployerProfileByUserId,
+} from "@/lib/services/employers";
 
 interface CollegeProfile {
   id: string;
@@ -20,7 +26,7 @@ interface CollegeProfile {
 
 export default function CollegePlacementPage() {
   const router = useRouter();
-  const { user, employerProfile } = useAuth();
+  const { user, employerProfile, loading: authLoading } = useAuth();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<CollegeProfile | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -29,6 +35,7 @@ export default function CollegePlacementPage() {
   const [partnering, setPartnering] = useState(false);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
   const [bulkForm, setBulkForm] = useState({
     title: '',
     department: '',
@@ -77,7 +84,15 @@ export default function CollegePlacementPage() {
 
   const handleBulkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !employerProfile) {
+    setBulkError(null);
+
+    if (authLoading) {
+      setBulkError('Please wait while your account is loading.');
+      return;
+    }
+
+    if (!user) {
+      setBulkError('Please sign in again.');
       router.push('/auth/login');
       return;
     }
@@ -86,10 +101,27 @@ export default function CollegePlacementPage() {
 
     setBulkSubmitting(true);
     try {
-      const selectedColleges = colleges.filter((c) => selectedIds.includes(c.id)).map((c) => ({ id: c.id, college_name: c.college_name }));
+      const selectedColleges = colleges
+        .filter((c) => selectedIds.includes(c.id))
+        .map((c) => ({ id: c.id, college_name: c.college_name }));
+
+      if (selectedColleges.length === 0) {
+        setBulkError('No valid colleges were selected. Please select again.');
+        return;
+      }
+
+      const freshProfile = await getEmployerProfileByUserId(user.id).catch(() => null);
+      const resolvedEmployerProfileId = freshProfile?.id ?? employerProfile?.id ?? null;
+
+      if (!resolvedEmployerProfileId) {
+        setBulkError('Employer profile not found. Please complete your profile setup and try again.');
+        return;
+      }
+
+      await getOrCreateEmployerData(resolvedEmployerProfileId);
 
       await createCollegeJobPosting({
-        employer_profile_id: employerProfile.id,
+        employer_profile_id: resolvedEmployerProfileId,
         title: bulkForm.title,
         department: bulkForm.department || null,
         location: bulkForm.location || null,
@@ -106,6 +138,12 @@ export default function CollegePlacementPage() {
       router.replace('/employers/overview');
     } catch (err) {
       console.error('Failed to create college job posting', err);
+      const message = err instanceof Error
+        ? err.message
+        : typeof err === 'object' && err && 'message' in err
+          ? String((err as { message: unknown }).message)
+          : 'Failed to create college job posting';
+      setBulkError(message);
     } finally {
       setBulkSubmitting(false);
     }
@@ -407,6 +445,12 @@ export default function CollegePlacementPage() {
                   className="w-full bg-background rounded-xl border border-border/60 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-shadow resize-none"
                 />
               </div>
+
+              {bulkError && (
+                <div className="bg-destructive/10 text-destructive text-sm rounded-xl px-4 py-3">
+                  {bulkError}
+                </div>
+              )}
 
               <div className="flex gap-3 pt-2">
                 <Button type="button" variant="outline" className="flex-1" onClick={() => setBulkModalOpen(false)}>
