@@ -22,6 +22,7 @@ interface CollegeProfile {
   location: string | null;
   number_of_students: string | null;
   establishment_date: string | null;
+  user_id: string | null;
 }
 
 export default function CollegePlacementPage() {
@@ -103,10 +104,19 @@ export default function CollegePlacementPage() {
     try {
       const selectedColleges = colleges
         .filter((c) => selectedIds.includes(c.id))
-        .map((c) => ({ id: c.id, college_name: c.college_name }));
+        .map((c) => ({
+          user_id: c.user_id,
+          college_name: c.college_name,
+        }));
 
       if (selectedColleges.length === 0) {
         setBulkError('No valid colleges were selected. Please select again.');
+        return;
+      }
+
+      const collegesWithoutUserId = selectedColleges.filter((c) => !c.user_id);
+      if (collegesWithoutUserId.length > 0) {
+        setBulkError('One or more selected colleges are missing user mapping (user_id). Please recheck selected colleges.');
         return;
       }
 
