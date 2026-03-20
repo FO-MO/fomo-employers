@@ -34,7 +34,6 @@ export default function EmployerSetupProfilePage() {
     setLoading(true);
 
     try {
-      console.log('submitting employer profile for user:', user?.id);
       // sanitize and validate phone number to fit DB integer column
       let phoneNumber: number | undefined = undefined;
       if (phone) {
@@ -62,8 +61,6 @@ export default function EmployerSetupProfilePage() {
         phone_number: phoneNumber,
       });
 
-      console.log('createEmployerProfile response at caller:', resp);
-      console.log('createEmployerProfile succeeded');
       await refreshProfile();
       router.push("/employers/overview");
     } catch (err: unknown) {

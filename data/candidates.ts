@@ -1,6 +1,7 @@
 export interface Candidate {
   id: string;
   name: string;
+  email?: string | null;
   college: string;
   branch: string;
   cgpa: number;
@@ -20,6 +21,7 @@ export interface Candidate {
   strengths: string[];
   summary: string;
   collegePlacement: boolean;
+  applicationStatus?: "pending" | "reviewing" | "accepted" | "rejected" | null;
 }
 
 export const candidates: Candidate[] = [

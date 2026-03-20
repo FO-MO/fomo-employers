@@ -34,8 +34,6 @@ export async function createEmployerProfile(payload: {
   const now = new Date().toISOString();
   const insertObj = { ...payload, updated_at: now };
 
-  console.log('createEmployerProfile: upserting employer_profiles with', insertObj);
-
   try {
     // guard against indefinitely hanging requests by applying a timeout
     const supabaseCall = supabase
@@ -48,7 +46,6 @@ export async function createEmployerProfile(payload: {
     const timeoutPromise = new Promise((_res, rej) => setTimeout(() => rej(new Error('Supabase request timed out')), timeoutMs));
 
     const resp = await Promise.race([supabaseCall, timeoutPromise]) as PostgrestSingleResponse<unknown>;
-    console.log('createEmployerProfile response:', resp);
 
     // Normalize return shape similar to other service functions: throw on error, return data
     if (resp?.error) {

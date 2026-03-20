@@ -5,7 +5,7 @@ import type { Candidate } from "@/data/candidates";
 
 interface Props {
   candidates: Candidate[];
-  onRemove: (id: string) => void;
+  onRemove: (id: string) => void | Promise<void>;
 }
 
 const ShortlistedSection = ({ candidates, onRemove }: Props) => {
@@ -60,13 +60,23 @@ const ShortlistedSection = ({ candidates, onRemove }: Props) => {
                   <span className="text-muted-foreground">/10</span>
                 </td>
                 <td className="px-5 py-3.5">
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-warning/15 text-warning font-medium">Pending Review</span>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-success/15 text-success font-medium">
+                    Accepted
+                  </span>
                 </td>
                 <td className="px-5 py-3.5 text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
-                      <Send className="h-3 w-3" /> Invite
-                    </Button>
+                    {c.email ? (
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1" asChild>
+                        <a href={`mailto:${c.email}`}>
+                          <Send className="h-3 w-3" /> Invite
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1" disabled>
+                        <Send className="h-3 w-3" /> Invite
+                      </Button>
+                    )}
                     <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={() => onRemove(c.id)}>
                       <Trash2 className="h-3 w-3" />
                     </Button>

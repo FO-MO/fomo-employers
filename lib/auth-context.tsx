@@ -121,8 +121,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    // Helpful for debugging: log the full sign-in response from Supabase
-    console.log("supabase signIn response:", { data, error });
 
     // If Supabase returned a user but their metadata does not mark them as an employer,
     // immediately sign them out and return a friendly error message for the UI.

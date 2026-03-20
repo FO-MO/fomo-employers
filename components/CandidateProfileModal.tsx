@@ -1,10 +1,14 @@
 "use client";
-import { X, Heart, CalendarDays, Mail, ExternalLink, Sparkles } from "lucide-react";
+import { X, Heart, Mail, ExternalLink, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Candidate } from "@/data/candidates";
 
+interface CandidateWithEmail extends Candidate {
+  email?: string | null;
+}
+
 interface Props {
-  candidate: Candidate;
+  candidate: CandidateWithEmail;
   isShortlisted: boolean;
   onClose: () => void;
   onToggleShortlist: (id: string) => void;
@@ -132,12 +136,17 @@ const CandidateProfileModal = ({ candidate, isShortlisted, onClose, onToggleShor
               <Heart className={`h-4 w-4 mr-2 ${isShortlisted ? "fill-current" : ""}`} />
               {isShortlisted ? "Shortlisted" : "Shortlist Candidate"}
             </Button>
-            <Button variant="outline">
-              <CalendarDays className="h-4 w-4 mr-2" /> Schedule Interview
-            </Button>
-            <Button variant="outline">
-              <Mail className="h-4 w-4 mr-2" /> Contact Student
-            </Button>
+            {candidate.email ? (
+              <Button asChild variant="outline">
+                <a href={`mailto:${candidate.email}`} className="flex items-center">
+                  <Mail className="h-4 w-4 mr-2" /> Contact Student
+                </a>
+              </Button>
+            ) : (
+              <Button variant="outline" disabled>
+                <Mail className="h-4 w-4 mr-2" /> Contact Student
+              </Button>
+            )}
           </div>
         </div>
       </div>

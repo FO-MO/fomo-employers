@@ -1,5 +1,5 @@
 "use client";
-import { Eye, Video, Heart, Download, ExternalLink, Sparkles } from "lucide-react";
+import { Eye, Heart, Download, Sparkles, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Candidate } from "@/data/candidates";
 
@@ -7,7 +7,8 @@ interface CandidateCardProps {
   candidate: Candidate;
   isShortlisted: boolean;
   onViewProfile: (c: Candidate) => void;
-  onToggleShortlist: (id: string) => void;
+  onToggleShortlist: (id: string) => void | Promise<void>;
+  onReject: (id: string) => void | Promise<void>;
 }
 
 const scoreColor = (score: number) => {
@@ -16,7 +17,8 @@ const scoreColor = (score: number) => {
   return "bg-warning/15 text-warning";
 };
 
-const CandidateCard = ({ candidate, isShortlisted, onViewProfile, onToggleShortlist }: CandidateCardProps) => {
+const CandidateCard = ({ candidate, isShortlisted, onViewProfile, onToggleShortlist, onReject }: CandidateCardProps) => {
+  const isRejected = candidate.applicationStatus === "rejected";
   return (
     <div className="candidate-card animate-fade-in">
       <div className="flex items-start gap-4">
@@ -80,6 +82,14 @@ const CandidateCard = ({ candidate, isShortlisted, onViewProfile, onToggleShortl
             >
               <Heart className={`h-3.5 w-3.5 ${isShortlisted ? "fill-current" : ""}`} />
               {isShortlisted ? "Shortlisted" : "Shortlist"}
+            </Button>
+            <Button
+              size="sm"
+              variant={isRejected ? "destructive" : "outline"}
+              className={`h-8 text-xs gap-1.5 ${isRejected ? "" : "text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive"}`}
+              onClick={() => onReject(candidate.id)}
+            >
+              <XCircle className="h-3.5 w-3.5" /> {isRejected ? "Rejected" : "Reject"}
             </Button>
             <Button size="sm" variant="ghost" className="h-8 text-xs gap-1.5">
               <Download className="h-3.5 w-3.5" /> Resume
