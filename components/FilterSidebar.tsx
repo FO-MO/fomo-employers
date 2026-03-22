@@ -55,7 +55,7 @@ const FilterSidebar = ({ filters, onChange }: FilterSidebarProps) => {
                   CGPA Range: {filters.cgpaRange[0]} – {filters.cgpaRange[1]}
                 </label>
                 <Slider
-                  min={5}
+                  min={0}
                   max={10}
                   step={0.1}
                   value={filters.cgpaRange}
@@ -130,7 +130,7 @@ const FilterSidebar = ({ filters, onChange }: FilterSidebarProps) => {
         <button
           onClick={() =>
             onChange({
-              cgpaRange: [5, 10],
+              cgpaRange: [0, 10],
               college: "All Colleges",
               branch: "All Departments",
               skills: [],

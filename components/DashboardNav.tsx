@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import {
   LayoutDashboard,
@@ -23,7 +24,7 @@ import { Button } from "@/components/ui/button";
 
 interface DashboardNavProps {
   activeTab: string;
-  onTabChange: (tab: string) => void;
+  onTabChange?: (tab: string) => void;
 }
 
 const navItems = [
@@ -34,7 +35,16 @@ const navItems = [
   { id: "profile", label: "Company Profile", icon: Building2 },
 ];
 
+const navRouteMap: Record<string, string> = {
+  dashboard: "/employers/overview/dashboard",
+  candidates: "/employers/overview/candidates",
+  shortlisted: "/employers/overview/shortlisted",
+  insights: "/employers/overview/insights",
+  profile: "/employers/overview/profile",
+};
+
 const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { employerProfile, signOut } = useAuth();
 
@@ -48,6 +58,15 @@ const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
   const handleMobileLogout = async () => {
     setMobileOpen(false);
     await signOut();
+  };
+
+  const handleTabChange = (tab: string) => {
+    if (onTabChange) {
+      onTabChange(tab);
+      return;
+    }
+
+    router.push(navRouteMap[tab] ?? "/employers/overview/dashboard");
   };
 
   const initials = employerProfile?.name
@@ -73,7 +92,7 @@ const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
             {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => onTabChange(item.id)}
+                onClick={() => handleTabChange(item.id)}
                 className={`nav-item ${activeTab === item.id ? "nav-item-active" : "nav-item-inactive"}`}
               >
                 <item.icon className="h-4 w-4" />
@@ -136,7 +155,7 @@ const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
               <button
                 key={item.id}
                 onClick={() => {
-                  onTabChange(item.id);
+                  handleTabChange(item.id);
                   setMobileOpen(false);
                 }}
                 className={`nav-item w-full ${activeTab === item.id ? "nav-item-active" : "nav-item-inactive"}`}
