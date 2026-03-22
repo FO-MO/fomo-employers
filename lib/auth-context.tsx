@@ -1,20 +1,33 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useRouter, usePathname } from "next/navigation";
 import supabase from "@/lib/supabaseClient";
 
-type AuthUser = Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"];
+type AuthUser = Awaited<
+  ReturnType<typeof supabase.auth.getUser>
+>["data"]["user"];
 
 interface AuthContextType {
   user: AuthUser;
   employerProfile: EmployerProfile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (
+    email: string,
+    password: string,
+  ) => Promise<{ error: string | null }>;
   signUp: (
     email: string,
     password: string,
-    username: string
+    username: string,
   ) => Promise<{ error: string | null; requiresEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -35,6 +48,8 @@ interface EmployerProfile {
   phone_number: number | null;
   email: string | null;
   country_code: number | null;
+  verification_status?: "pending" | "verified" | "rejected" | null;
+  published_at?: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -44,8 +59,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const [user, setUser] = useState<AuthUser>(null);
-  const [employerProfile, setEmployerProfile] = useState<EmployerProfile | null>(null);
+  const [employerProfile, setEmployerProfile] =
+    useState<EmployerProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const isSigningOutRef = useRef(false);
+
+  const setupPath = "/auth/employer-setup-profile";
+  const verificationWaitPath = "/auth/employer-verification-pending";
+
+  const isEmployerVerified = useCallback((profile: EmployerProfile | null) => {
+    if (!profile) return false;
+    if (profile.verification_status === "verified") return true;
+    return Boolean(profile.published_at);
+  }, []);
+
+  const routeEmployerUser = useCallback(
+    (
+      currentPath: string,
+      currentUser: AuthUser,
+      profile: EmployerProfile | null,
+    ) => {
+      const isAuthArea = currentPath.startsWith("/auth/");
+      const isEmployerArea = currentPath.startsWith("/employers");
+      const isSetupPage = currentPath === setupPath;
+      const isWaitPage = currentPath === verificationWaitPath;
+
+      if (!currentUser) {
+        if (isSigningOutRef.current) {
+          router.replace("/");
+          return;
+        }
+
+        if (isEmployerArea || isSetupPage || isWaitPage) {
+          router.replace("/auth/login");
+        }
+        return;
+      }
+
+      if (!profile) {
+        if (!isSetupPage) {
+          router.replace(setupPath);
+        }
+        return;
+      }
+
+      if (!isEmployerVerified(profile)) {
+        if (!isWaitPage) {
+          router.replace(verificationWaitPath);
+        }
+        return;
+      }
+
+      if (isAuthArea) {
+        router.replace("/employers/overview");
+      }
+    },
+    [isEmployerVerified, router],
+  );
 
   async function fetchProfile(userId: string) {
     const { data, error, status } = await supabase
@@ -83,44 +153,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(u);
       if (u) {
         const profile = await fetchProfile(u.id);
-        // If employer has no profile yet, and we're not already on the setup page,
-        // redirect them to complete their company profile.
-        if (!profile && pathname !== "/auth/employer-setup-profile") {
-          router.push("/auth/employer-setup-profile");
-        }
+        routeEmployerUser(pathname, u, profile);
+      } else {
+        routeEmployerUser(pathname, null, null);
       }
       setLoading(false);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event: string, session: { user?: { id: string; email?: string; user_metadata?: { usertype?: string } } } | null) => {
-      const u = session?.user ?? null;
-      const userType = u?.user_metadata?.usertype;
+    } = supabase.auth.onAuthStateChange(
+      async (
+        _event: string,
+        session: {
+          user?: {
+            id: string;
+            email?: string;
+            user_metadata?: { usertype?: string };
+          };
+        } | null,
+      ) => {
+        const u = session?.user ?? null;
+        const userType = u?.user_metadata?.usertype;
 
-      // If a non-employer signs in, clear session and prevent access
-      if (u && userType !== "employer") {
-        await supabase.auth.signOut();
-        setUser(null);
-        setEmployerProfile(null);
-        setLoading(false);
-        return;
-      }
-
-      setUser(u as AuthUser);
-      if (u) {
-        const profile = await fetchProfile(u.id);
-        if (!profile && pathname !== "/auth/employer-setup-profile") {
-          router.push("/auth/employer-setup-profile");
+        // If a non-employer signs in, clear session and prevent access
+        if (u && userType !== "employer") {
+          await supabase.auth.signOut();
+          setUser(null);
+          setEmployerProfile(null);
+          setLoading(false);
+          return;
         }
-      } else setEmployerProfile(null);
-    });
+
+        setUser(u as AuthUser);
+        if (u) {
+          const profile = await fetchProfile(u.id);
+          routeEmployerUser(pathname, u as AuthUser, profile);
+        } else {
+          setEmployerProfile(null);
+          routeEmployerUser(pathname, null, null);
+        }
+      },
+    );
 
     return () => subscription.unsubscribe();
-  }, [pathname, router]);
+  }, [pathname, routeEmployerUser]);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     // If Supabase returned a user but their metadata does not mark them as an employer,
     // immediately sign them out and return a friendly error message for the UI.
@@ -169,14 +252,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    isSigningOutRef.current = true;
+
     await supabase.auth.signOut();
     setUser(null);
     setEmployerProfile(null);
-    // Ensure the app navigates to the public home page after signing out
+
+    // Ensure the app always exits protected routes after sign out.
     try {
-      router.push("/");
-    } catch (e) {
+      router.replace("/");
+    } catch {
       // ignore navigation errors
+    } finally {
+      // Keep suppression active for one tick so auth listeners finish first.
+      setTimeout(() => {
+        isSigningOutRef.current = false;
+      }, 0);
     }
   };
 
@@ -185,7 +276,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, employerProfile, loading, signIn, signUp, signOut, refreshProfile }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        employerProfile,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

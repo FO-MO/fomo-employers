@@ -25,7 +25,6 @@ const defaultFilters: Filters = {
 
 interface JobApplicationRow {
   id: string;
-  job_id: string;
   student_id: string;
   status: "pending" | "reviewing" | "accepted" | "rejected" | null;
   job_type: "college" | "global" | null;
@@ -33,7 +32,7 @@ interface JobApplicationRow {
 }
 
 interface StudentProfileRow {
-  user_id: string;
+  user_id: string | null;
   name: string | null;
   college: string | null;
   course: string | null;
@@ -63,7 +62,8 @@ const toNumber = (value: unknown, fallback = 0) => {
   return num;
 };
 
-const normalizeScore = (value: number) => Math.max(0, Math.min(10, Number(value.toFixed(1))));
+const normalizeScore = (value: number) =>
+  Math.max(0, Math.min(10, Number(value.toFixed(1))));
 
 const getInitials = (name: string) => {
   const parts = name.trim().split(" ").filter(Boolean);
@@ -100,19 +100,32 @@ const extractAiScores = (result?: AiInterviewResultRow) => {
   }
 
   const overallFromTotals =
-    result.total_raw_score !== null && result.max_possible && result.max_possible > 0
+    result.total_raw_score !== null &&
+    result.max_possible &&
+    result.max_possible > 0
       ? (result.total_raw_score / result.max_possible) * 10
       : 0;
 
-  const roleScores = typeof result.role_scores === "object" && result.role_scores !== null
-    ? (result.role_scores as Record<string, unknown>)
-    : {};
+  const roleScores =
+    typeof result.role_scores === "object" && result.role_scores !== null
+      ? (result.role_scores as Record<string, unknown>)
+      : {};
 
-  const communication = normalizeScore(toNumber(roleScores.communication, overallFromTotals));
-  const technical = normalizeScore(toNumber(roleScores.technical, overallFromTotals));
-  const confidence = normalizeScore(toNumber(roleScores.confidence, overallFromTotals));
+  const communication = normalizeScore(
+    toNumber(roleScores.communication, overallFromTotals),
+  );
+  const technical = normalizeScore(
+    toNumber(roleScores.technical, overallFromTotals),
+  );
+  const confidence = normalizeScore(
+    toNumber(roleScores.confidence, overallFromTotals),
+  );
 
-  const overallRaw = [communication, technical, confidence].reduce((sum, score) => sum + score, 0) / 3;
+  const overallRaw =
+    [communication, technical, confidence].reduce(
+      (sum, score) => sum + score,
+      0,
+    ) / 3;
   const overall = normalizeScore(overallRaw || overallFromTotals);
 
   return {
@@ -135,7 +148,9 @@ export default function OverviewPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [shortlistedIds, setShortlistedIds] = useState<Set<string>>(new Set());
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
+    null,
+  );
   const [search, setSearch] = useState("");
   const [collegePlacementOnly, setCollegePlacementOnly] = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -146,6 +161,7 @@ export default function OverviewPage() {
     const loadCandidates = async () => {
       if (!user || !employerProfile) {
         setCandidates([]);
+        setShortlistedIds(new Set());
         return;
       }
 
@@ -153,77 +169,82 @@ export default function OverviewPage() {
       setCandidatesError(null);
 
       try {
-        const [globalJobsRes, collegeJobsRes] = await Promise.all([
-          supabase
-            .from("global_job_postings")
-            .select("id")
-            .eq("employer_profile_id", employerProfile.id),
-          supabase
-            .from("college_job_postings")
-            .select("id")
-            .eq("employer_profile_id", employerProfile.id),
-        ]);
+        const studentsRes = await supabase
+          .from("student_profiles")
+          .select(
+            "user_id, name, college, course, cgpa, skills, location, about",
+          )
+          .order("created_at", { ascending: false });
 
-        if (globalJobsRes.error) throw globalJobsRes.error;
-        if (collegeJobsRes.error) throw collegeJobsRes.error;
+        if (studentsRes.error) throw studentsRes.error;
 
-        const jobIds = [
-          ...(globalJobsRes.data ?? []).map((row) => row.id as string),
-          ...(collegeJobsRes.data ?? []).map((row) => row.id as string),
-        ];
-
-        if (jobIds.length === 0) {
-          setCandidates([]);
-          return;
-        }
-
-        const applicationsRes = await supabase
-          .from("job_applications")
-          .select("id, job_id, student_id, status, job_type, applied_at")
-          .in("job_id", jobIds)
-          .order("applied_at", { ascending: false });
-
-        if (applicationsRes.error) throw applicationsRes.error;
-
-        const applications = (applicationsRes.data ?? []) as JobApplicationRow[];
-        if (applications.length === 0) {
+        const students = (studentsRes.data ?? []) as StudentProfileRow[];
+        if (students.length === 0) {
           setCandidates([]);
           setShortlistedIds(new Set());
           return;
         }
 
-        const acceptedApplicationIds = applications
-          .filter((application) => application.status === "accepted")
-          .map((application) => application.id);
-        setShortlistedIds(new Set(acceptedApplicationIds));
+        const uniqueStudentIds = Array.from(
+          new Set(
+            students
+              .map((s) => s.user_id)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        );
 
-        const uniqueStudentIds = Array.from(new Set(applications.map((app) => app.student_id)));
+        if (uniqueStudentIds.length === 0) {
+          setCandidates([]);
+          setShortlistedIds(new Set());
+          return;
+        }
 
-        const [studentsRes, aiResultsRes] = await Promise.all([
-          supabase
-            .from("student_profiles")
-            .select("user_id, name, college, course, cgpa, skills, location, about")
-            .in("user_id", uniqueStudentIds),
-          supabase
-            .from("ai_interview_results")
-            .select("user_id, total_raw_score, max_possible, full_report, role_scores, created_at")
-            .in("user_id", uniqueStudentIds)
-            .order("created_at", { ascending: false }),
-        ]);
+        const [aiResultsRes, userProfilesRes, applicationsRes] =
+          await Promise.all([
+            supabase
+              .from("ai_interview_results")
+              .select(
+                "user_id, total_raw_score, max_possible, full_report, role_scores, created_at",
+              )
+              .in("user_id", uniqueStudentIds)
+              .order("created_at", { ascending: false }),
+            supabase
+              .from("user_profiles")
+              .select("id, email")
+              .in("id", uniqueStudentIds),
+            supabase
+              .from("job_applications")
+              .select("id, student_id, status, job_type, applied_at")
+              .in("student_id", uniqueStudentIds)
+              .order("applied_at", { ascending: false }),
+          ]);
 
-        const userProfilesRes = await supabase
-          .from("user_profiles")
-          .select("id, email")
-          .in("id", uniqueStudentIds);
-
-        if (studentsRes.error) throw studentsRes.error;
         if (aiResultsRes.error) throw aiResultsRes.error;
         if (userProfilesRes.error) throw userProfilesRes.error;
+        if (applicationsRes.error) throw applicationsRes.error;
 
-        const studentMap = new Map<string, StudentProfileRow>();
-        for (const row of (studentsRes.data ?? []) as StudentProfileRow[]) {
-          studentMap.set(row.user_id, row);
+        const applications = (applicationsRes.data ??
+          []) as JobApplicationRow[];
+
+        const latestApplicationByStudentId = new Map<
+          string,
+          JobApplicationRow
+        >();
+        for (const application of applications) {
+          if (!latestApplicationByStudentId.has(application.student_id)) {
+            latestApplicationByStudentId.set(
+              application.student_id,
+              application,
+            );
+          }
         }
+
+        const acceptedStudentIds = Array.from(
+          latestApplicationByStudentId.entries(),
+        )
+          .filter(([, application]) => application.status === "accepted")
+          .map(([studentId]) => studentId);
+        setShortlistedIds(new Set(acceptedStudentIds));
 
         const aiMap = new Map<string, AiInterviewResultRow>();
         for (const row of (aiResultsRes.data ?? []) as AiInterviewResultRow[]) {
@@ -237,40 +258,55 @@ export default function OverviewPage() {
           userEmailMap.set(row.id, row.email);
         }
 
-        const mappedCandidates: Candidate[] = applications.map((application) => {
-          const profile = studentMap.get(application.student_id);
-          const name = profile?.name?.trim() || "Unnamed Candidate";
-          const skills = normalizeSkills(profile?.skills);
-          const aiScores = extractAiScores(aiMap.get(application.student_id));
-          const statusLabel = application.status ? application.status : "pending";
+        const mappedCandidates: Candidate[] = students
+          .map((profile) => {
+            if (!profile.user_id) {
+              return null;
+            }
 
-          return {
-            id: application.id,
-            name,
-            email: userEmailMap.get(application.student_id) ?? null,
-            college: profile?.college || "Unknown College",
-            branch: profile?.course || "Unknown Department",
-            cgpa: normalizeScore(toNumber(profile?.cgpa, 0)),
-            skills,
-            location: profile?.location || "Not specified",
-            aiScores,
-            matchScore: Math.round(aiScores.overall * 10),
-            experience: "Fresher",
-            projects: 0,
-            avatar: getInitials(name),
-            strengths: skills.slice(0, 3),
-            summary:
-              profile?.about ||
-              `Application status: ${statusLabel.charAt(0).toUpperCase()}${statusLabel.slice(1)}.`,
-            collegePlacement: application.job_type === "college",
-            applicationStatus: application.status,
-          };
-        });
+            const latestApplication = latestApplicationByStudentId.get(
+              profile.user_id,
+            );
+            const name = profile?.name?.trim() || "Unnamed Candidate";
+            const skills = normalizeSkills(profile?.skills);
+            const aiScores = extractAiScores(aiMap.get(profile.user_id));
+            const statusLabel = latestApplication?.status
+              ? latestApplication.status
+              : null;
+            const hasApplied = Boolean(latestApplication);
+
+            return {
+              id: profile.user_id,
+              applicationId: latestApplication?.id ?? null,
+              name,
+              email: userEmailMap.get(profile.user_id) ?? null,
+              college: profile?.college || "Unknown College",
+              branch: profile?.course || "Unknown Department",
+              cgpa: normalizeScore(toNumber(profile?.cgpa, 0)),
+              skills,
+              location: profile?.location || "Not specified",
+              aiScores,
+              matchScore: Math.round(aiScores.overall * 10),
+              experience: hasApplied ? "Applied Candidate" : "Profile Only",
+              projects: 0,
+              avatar: getInitials(name),
+              strengths: skills.slice(0, 3),
+              summary:
+                profile?.about ||
+                (statusLabel
+                  ? `Application status: ${statusLabel.charAt(0).toUpperCase()}${statusLabel.slice(1)}.`
+                  : "No applications submitted yet."),
+              collegePlacement: latestApplication?.job_type === "college",
+              applicationStatus: latestApplication?.status ?? null,
+            };
+          })
+          .filter((candidate): candidate is Candidate => candidate !== null);
 
         setCandidates(mappedCandidates);
       } catch (err: unknown) {
         console.error("Failed to load employer candidates", err);
-        const message = err instanceof Error ? err.message : "Failed to load candidates";
+        const message =
+          err instanceof Error ? err.message : "Failed to load candidates";
         setCandidatesError(message);
         setCandidates([]);
       } finally {
@@ -299,7 +335,10 @@ export default function OverviewPage() {
     }
   };
 
-  const updateCandidateStatusLocally = (id: string, status: JobApplicationRow["status"]) => {
+  const updateCandidateStatusLocally = (
+    id: string,
+    status: JobApplicationRow["status"],
+  ) => {
     setCandidates((prev) =>
       prev.map((candidate) =>
         candidate.id === id
@@ -307,19 +346,29 @@ export default function OverviewPage() {
               ...candidate,
               applicationStatus: status,
             }
-          : candidate
-      )
+          : candidate,
+      ),
     );
   };
 
   const toggleShortlist = async (id: string) => {
+    const candidate = candidates.find((item) => item.id === id);
+    if (!candidate?.applicationId) {
+      setCandidatesError(
+        "This student has not applied to a job yet, so shortlist is unavailable.",
+      );
+      return;
+    }
+
     const isAlreadyShortlisted = shortlistedIds.has(id);
-    const nextStatus: JobApplicationRow["status"] = isAlreadyShortlisted ? "pending" : "accepted";
+    const nextStatus: JobApplicationRow["status"] = isAlreadyShortlisted
+      ? "pending"
+      : "accepted";
 
     const { error } = await supabase
       .from("job_applications")
       .update({ status: nextStatus, updated_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("id", candidate.applicationId);
 
     if (error) {
       setCandidatesError(error.message);
@@ -341,10 +390,18 @@ export default function OverviewPage() {
   };
 
   const rejectApplication = async (id: string) => {
+    const candidate = candidates.find((item) => item.id === id);
+    if (!candidate?.applicationId) {
+      setCandidatesError(
+        "This student has not applied to a job yet, so reject is unavailable.",
+      );
+      return;
+    }
+
     const { error } = await supabase
       .from("job_applications")
       .update({ status: "rejected", updated_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("id", candidate.applicationId);
 
     if (error) {
       setCandidatesError(error.message);
@@ -363,10 +420,17 @@ export default function OverviewPage() {
   const filtered = useMemo(() => {
     return candidates
       .filter((c) => {
-        if (c.cgpa < filters.cgpaRange[0] || c.cgpa > filters.cgpaRange[1]) return false;
-        if (filters.college !== "All Colleges" && c.college !== filters.college) return false;
-        if (filters.branch !== "All Departments" && c.branch !== filters.branch) return false;
-        if (filters.skills.length > 0 && !filters.skills.some((s) => c.skills.includes(s))) return false;
+        if (c.cgpa < filters.cgpaRange[0] || c.cgpa > filters.cgpaRange[1])
+          return false;
+        if (filters.college !== "All Colleges" && c.college !== filters.college)
+          return false;
+        if (filters.branch !== "All Departments" && c.branch !== filters.branch)
+          return false;
+        if (
+          filters.skills.length > 0 &&
+          !filters.skills.some((s) => c.skills.includes(s))
+        )
+          return false;
         if (c.aiScores.overall < filters.minAiScore) return false;
         if (c.aiScores.communication < filters.minCommScore) return false;
         if (collegePlacementOnly && !c.collegePlacement) return false;
@@ -381,7 +445,9 @@ export default function OverviewPage() {
       .sort((a, b) => b.matchScore - a.matchScore);
   }, [candidates, filters, search, collegePlacementOnly]);
 
-  const shortlistedCandidates = candidates.filter((c) => shortlistedIds.has(c.id));
+  const shortlistedCandidates = candidates.filter((c) =>
+    shortlistedIds.has(c.id),
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -391,7 +457,10 @@ export default function OverviewPage() {
         {(activeTab === "dashboard" || activeTab === "candidates") && (
           <>
             {activeTab === "dashboard" && (
-              <HeroSection onPostJob={handlePostJob} onCollegePlacement={handleCollegePlacement} />
+              <HeroSection
+                onPostJob={handlePostJob}
+                onCollegePlacement={handleCollegePlacement}
+              />
             )}
 
             <div className="flex flex-col lg:flex-row gap-6">
@@ -424,7 +493,11 @@ export default function OverviewPage() {
                 </div>
 
                 <p className="text-sm text-muted-foreground">
-                  Showing <span className="font-medium text-foreground">{filtered.length}</span> candidates
+                  Showing{" "}
+                  <span className="font-medium text-foreground">
+                    {filtered.length}
+                  </span>{" "}
+                  candidates
                 </p>
 
                 {candidatesError && (
@@ -452,12 +525,14 @@ export default function OverviewPage() {
                   )}
                   {!loadingCandidates && candidates.length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground">
-                      No candidates have applied yet. Try posting a job or check back later.
+                      No students found in the database.
                     </div>
                   ) : (
-                    !loadingCandidates && filtered.length === 0 && (
+                    !loadingCandidates &&
+                    filtered.length === 0 && (
                       <div className="text-center py-12 text-muted-foreground">
-                        No candidates match your filters. Try adjusting your criteria.
+                        No candidates match your filters. Try adjusting your
+                        criteria.
                       </div>
                     )
                   )}
@@ -468,7 +543,10 @@ export default function OverviewPage() {
         )}
 
         {activeTab === "shortlisted" && (
-          <ShortlistedSection candidates={shortlistedCandidates} onRemove={toggleShortlist} />
+          <ShortlistedSection
+            candidates={shortlistedCandidates}
+            onRemove={toggleShortlist}
+          />
         )}
 
         {activeTab === "insights" && <AIInsightsSection />}
@@ -494,26 +572,37 @@ function CompanyProfileSection() {
   if (!employerProfile) {
     return (
       <div className="text-center py-16">
-        <h2 className="font-heading font-bold text-xl text-foreground mb-2">Company Profile</h2>
-        <p className="text-sm text-muted-foreground">No employer profile found. Set up your profile first.</p>
+        <h2 className="font-heading font-bold text-xl text-foreground mb-2">
+          Company Profile
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          No employer profile found. Set up your profile first.
+        </p>
       </div>
     );
   }
 
-
-  const Field = ({ label, value }: { label: string; value: string | null | undefined }) => (
+  const Field = ({
+    label,
+    value,
+  }: {
+    label: string;
+    value: string | null | undefined;
+  }) => (
     <div className="space-y-1">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        {label}
+      </p>
       <p className="text-sm text-foreground">{value || "—"}</p>
     </div>
   );
 
-  
-
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center">
-        <h2 className="font-heading font-bold text-xl text-foreground">Company Profile</h2>
+        <h2 className="font-heading font-bold text-xl text-foreground">
+          Company Profile
+        </h2>
       </div>
       <div className="bg-card rounded-2xl border border-border/60 p-6 space-y-5">
         <Field label="Company Name" value={employerProfile.name} />
@@ -526,7 +615,10 @@ function CompanyProfileSection() {
         <Field label="Specialties" value={employerProfile.specialties} />
         <div className="grid grid-cols-2 gap-6">
           <Field label="Email" value={employerProfile.email} />
-          <Field label="Employees" value={employerProfile.no_of_employers?.toString()} />
+          <Field
+            label="Employees"
+            value={employerProfile.no_of_employers?.toString()}
+          />
         </div>
       </div>
     </div>
