@@ -2,13 +2,29 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { LayoutDashboard, Users, Heart, Brain, Building2, LogOut, Menu, X } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  LayoutDashboard,
+  Users,
+  Heart,
+  Brain,
+  Building2,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 interface DashboardNavProps {
   activeTab: string;
-  onTabChange: (tab: string) => void;
+  onTabChange?: (tab: string) => void;
 }
 
 const navItems = [
@@ -19,9 +35,17 @@ const navItems = [
   { id: "profile", label: "Company Profile", icon: Building2 },
 ];
 
+const navRouteMap: Record<string, string> = {
+  dashboard: "/employers/overview/dashboard",
+  candidates: "/employers/overview/candidates",
+  shortlisted: "/employers/overview/shortlisted",
+  insights: "/employers/overview/insights",
+  profile: "/employers/overview/profile",
+};
+
 const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { employerProfile, signOut } = useAuth();
 
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -29,7 +53,20 @@ const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
   const handleLogoutConfirmed = async () => {
     setLogoutOpen(false);
     await signOut();
-    router.push("/");
+  };
+
+  const handleMobileLogout = async () => {
+    setMobileOpen(false);
+    await signOut();
+  };
+
+  const handleTabChange = (tab: string) => {
+    if (onTabChange) {
+      onTabChange(tab);
+      return;
+    }
+
+    router.push(navRouteMap[tab] ?? "/employers/overview/dashboard");
   };
 
   const initials = employerProfile?.name
@@ -46,14 +83,16 @@ const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
-            <span className="font-heading font-bold text-lg text-foreground">FOOMO</span>
+            <span className="font-heading font-bold text-lg text-foreground">
+              FOOMO
+            </span>
           </div>
 
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => onTabChange(item.id)}
+                onClick={() => handleTabChange(item.id)}
                 className={`nav-item ${activeTab === item.id ? "nav-item-active" : "nav-item-inactive"}`}
               >
                 <item.icon className="h-4 w-4" />
@@ -66,7 +105,10 @@ const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-semibold">
               {initials}
             </div>
-            <button onClick={() => setLogoutOpen(true)} className="nav-item nav-item-inactive">
+            <button
+              onClick={() => setLogoutOpen(true)}
+              className="nav-item nav-item-inactive"
+            >
               <LogOut className="h-4 w-4" />
               Logout
             </button>
@@ -75,11 +117,21 @@ const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Confirm Logout</DialogTitle>
-                  <DialogDescription>Are you sure you want to sign out? You will need to sign in again to access the dashboard.</DialogDescription>
+                  <DialogDescription>
+                    Are you sure you want to sign out? You will need to sign in
+                    again to access the dashboard.
+                  </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setLogoutOpen(false)}>Cancel</Button>
-                  <Button className="ml-2" onClick={handleLogoutConfirmed}>Sign out</Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setLogoutOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button className="ml-2" onClick={handleLogoutConfirmed}>
+                    Sign out
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -89,7 +141,11 @@ const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
             onClick={() => setMobileOpen(!mobileOpen)}
             className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground"
           >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {mobileOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </button>
         </div>
 
@@ -98,13 +154,24 @@ const DashboardNav = ({ activeTab, onTabChange }: DashboardNavProps) => {
             {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => { onTabChange(item.id); setMobileOpen(false); }}
+                onClick={() => {
+                  handleTabChange(item.id);
+                  setMobileOpen(false);
+                }}
                 className={`nav-item w-full ${activeTab === item.id ? "nav-item-active" : "nav-item-inactive"}`}
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
               </button>
             ))}
+
+            <button
+              onClick={handleMobileLogout}
+              className="nav-item w-full nav-item-inactive"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
           </div>
         )}
       </div>

@@ -41,14 +41,16 @@ export default function EmployerSetupProfilePage() {
         const parsed = Number(digits);
         const MAX_INT = 2147483647; // 32-bit signed int max
         if (Number.isNaN(parsed) || parsed <= 0 || parsed > MAX_INT) {
-          setError("Please enter a valid phone number that fits into the database (max 10 digits).\nE.g. +91 9876543210 -> 9876543210");
+          setError(
+            "Please enter a valid phone number that fits into the database (max 10 digits).\nE.g. +91 9876543210 -> 9876543210",
+          );
           setLoading(false);
           return;
         }
         phoneNumber = parsed;
       }
 
-      const resp = await createEmployerProfile({
+      await createEmployerProfile({
         user_id: user.id,
         name,
         email: user.email,
@@ -56,15 +58,17 @@ export default function EmployerSetupProfilePage() {
         location: location || undefined,
         website: website || undefined,
         description: description || undefined,
-        no_of_employers: noOfEmployers ? parseInt(noOfEmployers, 10) : undefined,
+        no_of_employers: noOfEmployers
+          ? parseInt(noOfEmployers, 10)
+          : undefined,
         specialties: specialties || undefined,
         phone_number: phoneNumber,
       });
 
       await refreshProfile();
-      router.push("/employers/overview");
+      router.push("/auth/employer-verification-pending");
     } catch (err: unknown) {
-      console.error('createEmployerProfile error caught:', err);
+      console.error("createEmployerProfile error caught:", err);
       setError(err instanceof Error ? err.message : "Failed to create profile");
     } finally {
       setLoading(false);
@@ -75,17 +79,28 @@ export default function EmployerSetupProfilePage() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <h1 className="font-heading text-2xl font-bold text-foreground">Set Up Your Company Profile</h1>
-          <p className="text-sm text-muted-foreground mt-1">Tell us about your organisation</p>
+          <h1 className="font-heading text-2xl font-bold text-foreground">
+            Set Up Your Company Profile
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Tell us about your organisation
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-card rounded-2xl border border-border/60 p-6 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-card rounded-2xl border border-border/60 p-6 space-y-4"
+        >
           {error && (
-            <div className="bg-destructive/10 text-destructive text-sm rounded-xl px-4 py-3">{error}</div>
+            <div className="bg-destructive/10 text-destructive text-sm rounded-xl px-4 py-3">
+              {error}
+            </div>
           )}
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Company Name *</label>
+            <label className="text-sm font-medium text-foreground">
+              Company Name *
+            </label>
             <input
               required
               type="text"
@@ -98,7 +113,9 @@ export default function EmployerSetupProfilePage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Industry</label>
+              <label className="text-sm font-medium text-foreground">
+                Industry
+              </label>
               <input
                 type="text"
                 value={industry}
@@ -108,7 +125,9 @@ export default function EmployerSetupProfilePage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Location</label>
+              <label className="text-sm font-medium text-foreground">
+                Location
+              </label>
               <input
                 type="text"
                 value={location}
@@ -120,7 +139,9 @@ export default function EmployerSetupProfilePage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Website</label>
+            <label className="text-sm font-medium text-foreground">
+              Website
+            </label>
             <input
               type="url"
               value={website}
@@ -131,7 +152,9 @@ export default function EmployerSetupProfilePage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Company Description</label>
+            <label className="text-sm font-medium text-foreground">
+              Company Description
+            </label>
             <textarea
               rows={3}
               value={description}
@@ -143,7 +166,9 @@ export default function EmployerSetupProfilePage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">No. of Employees</label>
+              <label className="text-sm font-medium text-foreground">
+                No. of Employees
+              </label>
               <input
                 type="number"
                 min="1"
@@ -154,7 +179,9 @@ export default function EmployerSetupProfilePage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Phone Number</label>
+              <label className="text-sm font-medium text-foreground">
+                Phone Number
+              </label>
               <input
                 type="tel"
                 value={phone}
@@ -166,7 +193,9 @@ export default function EmployerSetupProfilePage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Specialties</label>
+            <label className="text-sm font-medium text-foreground">
+              Specialties
+            </label>
             <input
               type="text"
               value={specialties}
@@ -176,7 +205,11 @@ export default function EmployerSetupProfilePage() {
             />
           </div>
 
-          <Button type="submit" className="w-full font-semibold" disabled={loading}>
+          <Button
+            type="submit"
+            className="w-full font-semibold"
+            disabled={loading}
+          >
             {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {loading ? "Saving..." : "Complete Setup"}
           </Button>

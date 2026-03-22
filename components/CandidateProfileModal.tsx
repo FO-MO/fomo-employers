@@ -29,9 +29,18 @@ const ScoreBar = ({ label, value }: { label: string; value: number }) => (
   </div>
 );
 
-const CandidateProfileModal = ({ candidate, isShortlisted, onClose, onToggleShortlist }: Props) => {
+const CandidateProfileModal = ({
+  candidate,
+  isShortlisted,
+  onClose,
+  onToggleShortlist,
+}: Props) => {
+  const hasApplication = Boolean(candidate.applicationId);
   return (
-    <div className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
       <div
         className="bg-card rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-fade-in"
         onClick={(e) => e.stopPropagation()}
@@ -42,12 +51,21 @@ const CandidateProfileModal = ({ candidate, isShortlisted, onClose, onToggleShor
               {candidate.avatar}
             </div>
             <div>
-              <h2 className="font-heading font-bold text-xl text-foreground">{candidate.name}</h2>
-              <p className="text-sm text-muted-foreground">{candidate.college}</p>
-              <p className="text-sm text-muted-foreground">{candidate.branch} · CGPA {candidate.cgpa}</p>
+              <h2 className="font-heading font-bold text-xl text-foreground">
+                {candidate.name}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {candidate.college}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {candidate.branch} · CGPA {candidate.cgpa}
+              </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground p-1"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -57,23 +75,36 @@ const CandidateProfileModal = ({ candidate, isShortlisted, onClose, onToggleShor
           <div className="flex items-center gap-3 bg-accent/10 rounded-xl p-4">
             <Sparkles className="h-5 w-5 text-accent" />
             <div>
-              <span className="font-heading font-bold text-2xl text-accent">{candidate.matchScore}%</span>
-              <span className="text-sm text-muted-foreground ml-2">AI Match Score</span>
+              <span className="font-heading font-bold text-2xl text-accent">
+                {candidate.matchScore}%
+              </span>
+              <span className="text-sm text-muted-foreground ml-2">
+                AI Match Score
+              </span>
             </div>
           </div>
 
           {/* AI Summary */}
           <div>
-            <h3 className="font-heading font-semibold text-sm text-foreground mb-2">AI Summary</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">{candidate.summary}</p>
+            <h3 className="font-heading font-semibold text-sm text-foreground mb-2">
+              AI Summary
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {candidate.summary}
+            </p>
           </div>
 
           {/* Skills */}
           <div>
-            <h3 className="font-heading font-semibold text-sm text-foreground mb-2">Skills</h3>
+            <h3 className="font-heading font-semibold text-sm text-foreground mb-2">
+              Skills
+            </h3>
             <div className="flex flex-wrap gap-2">
               {candidate.skills.map((s) => (
-                <span key={s} className="text-xs px-3 py-1 rounded-full bg-secondary text-secondary-foreground">
+                <span
+                  key={s}
+                  className="text-xs px-3 py-1 rounded-full bg-secondary text-secondary-foreground"
+                >
                   {s}
                 </span>
               ))}
@@ -82,21 +113,37 @@ const CandidateProfileModal = ({ candidate, isShortlisted, onClose, onToggleShor
 
           {/* AI Scores */}
           <div>
-            <h3 className="font-heading font-semibold text-sm text-foreground mb-3">AI Interview Scores</h3>
+            <h3 className="font-heading font-semibold text-sm text-foreground mb-3">
+              AI Interview Scores
+            </h3>
             <div className="space-y-3">
-              <ScoreBar label="Communication" value={candidate.aiScores.communication} />
-              <ScoreBar label="Technical Knowledge" value={candidate.aiScores.technical} />
-              <ScoreBar label="Confidence" value={candidate.aiScores.confidence} />
+              <ScoreBar
+                label="Communication"
+                value={candidate.aiScores.communication}
+              />
+              <ScoreBar
+                label="Technical Knowledge"
+                value={candidate.aiScores.technical}
+              />
+              <ScoreBar
+                label="Confidence"
+                value={candidate.aiScores.confidence}
+              />
               <ScoreBar label="Overall" value={candidate.aiScores.overall} />
             </div>
           </div>
 
           {/* Strengths */}
           <div>
-            <h3 className="font-heading font-semibold text-sm text-foreground mb-2">Key Strengths</h3>
+            <h3 className="font-heading font-semibold text-sm text-foreground mb-2">
+              Key Strengths
+            </h3>
             <div className="flex flex-wrap gap-2">
               {candidate.strengths.map((s) => (
-                <span key={s} className="text-xs px-3 py-1 rounded-full bg-success/10 text-success">
+                <span
+                  key={s}
+                  className="text-xs px-3 py-1 rounded-full bg-success/10 text-success"
+                >
                   {s}
                 </span>
               ))}
@@ -107,20 +154,29 @@ const CandidateProfileModal = ({ candidate, isShortlisted, onClose, onToggleShor
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Location</span>
-              <p className="font-medium text-foreground">{candidate.location}</p>
+              <p className="font-medium text-foreground">
+                {candidate.location}
+              </p>
             </div>
             <div>
               <span className="text-muted-foreground">Experience</span>
-              <p className="font-medium text-foreground">{candidate.experience}</p>
+              <p className="font-medium text-foreground">
+                {candidate.experience}
+              </p>
             </div>
             <div>
               <span className="text-muted-foreground">Projects</span>
-              <p className="font-medium text-foreground">{candidate.projects} projects</p>
+              <p className="font-medium text-foreground">
+                {candidate.projects} projects
+              </p>
             </div>
             {candidate.portfolio && (
               <div>
                 <span className="text-muted-foreground">Portfolio</span>
-                <a href={candidate.portfolio} className="font-medium text-accent flex items-center gap-1 hover:underline">
+                <a
+                  href={candidate.portfolio}
+                  className="font-medium text-accent flex items-center gap-1 hover:underline"
+                >
                   View <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
@@ -130,15 +186,21 @@ const CandidateProfileModal = ({ candidate, isShortlisted, onClose, onToggleShor
           {/* Actions */}
           <div className="flex flex-wrap gap-3 pt-2">
             <Button
+              disabled={!hasApplication}
               onClick={() => onToggleShortlist(candidate.id)}
               className={isShortlisted ? "bg-success hover:bg-success/90" : ""}
             >
-              <Heart className={`h-4 w-4 mr-2 ${isShortlisted ? "fill-current" : ""}`} />
+              <Heart
+                className={`h-4 w-4 mr-2 ${isShortlisted ? "fill-current" : ""}`}
+              />
               {isShortlisted ? "Shortlisted" : "Shortlist Candidate"}
             </Button>
             {candidate.email ? (
               <Button asChild variant="outline">
-                <a href={`mailto:${candidate.email}`} className="flex items-center">
+                <a
+                  href={`mailto:${candidate.email}`}
+                  className="flex items-center"
+                >
                   <Mail className="h-4 w-4 mr-2" /> Contact Student
                 </a>
               </Button>

@@ -25,7 +25,8 @@ const FilterSidebar = ({ filters, onChange }: FilterSidebarProps) => {
     ai: true,
   });
 
-  const toggle = (key: string) => setExpanded((p) => ({ ...p, [key]: !p[key] }));
+  const toggle = (key: string) =>
+    setExpanded((p) => ({ ...p, [key]: !p[key] }));
 
   const toggleSkill = (skill: string) => {
     const next = filters.skills.includes(skill)
@@ -44,9 +45,16 @@ const FilterSidebar = ({ filters, onChange }: FilterSidebarProps) => {
 
         {/* Academic */}
         <div className="filter-section">
-          <button onClick={() => toggle("academic")} className="flex items-center justify-between w-full text-sm font-medium text-foreground">
+          <button
+            onClick={() => toggle("academic")}
+            className="flex items-center justify-between w-full text-sm font-medium text-foreground"
+          >
             Academic
-            {expanded.academic ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {expanded.academic ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
           </button>
           {expanded.academic && (
             <div className="space-y-4 mt-3 animate-fade-in">
@@ -55,11 +63,13 @@ const FilterSidebar = ({ filters, onChange }: FilterSidebarProps) => {
                   CGPA Range: {filters.cgpaRange[0]} – {filters.cgpaRange[1]}
                 </label>
                 <Slider
-                  min={5}
+                  min={0}
                   max={10}
                   step={0.1}
                   value={filters.cgpaRange}
-                  onValueChange={(v) => onChange({ ...filters, cgpaRange: v as [number, number] })}
+                  onValueChange={(v) =>
+                    onChange({ ...filters, cgpaRange: v as [number, number] })
+                  }
                 />
               </div>
             </div>
@@ -68,9 +78,16 @@ const FilterSidebar = ({ filters, onChange }: FilterSidebarProps) => {
 
         {/* Skills */}
         <div className="filter-section">
-          <button onClick={() => toggle("skills")} className="flex items-center justify-between w-full text-sm font-medium text-foreground">
+          <button
+            onClick={() => toggle("skills")}
+            className="flex items-center justify-between w-full text-sm font-medium text-foreground"
+          >
             Skills
-            {expanded.skills ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {expanded.skills ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
           </button>
           {expanded.skills && (
             <div className="flex flex-wrap gap-1.5 mt-3 animate-fade-in">
@@ -93,9 +110,16 @@ const FilterSidebar = ({ filters, onChange }: FilterSidebarProps) => {
 
         {/* AI Evaluation */}
         <div className="filter-section border-b-0">
-          <button onClick={() => toggle("ai")} className="flex items-center justify-between w-full text-sm font-medium text-foreground">
+          <button
+            onClick={() => toggle("ai")}
+            className="flex items-center justify-between w-full text-sm font-medium text-foreground"
+          >
             AI Evaluation
-            {expanded.ai ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {expanded.ai ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
           </button>
           {expanded.ai && (
             <div className="space-y-4 mt-3 animate-fade-in">
@@ -108,7 +132,9 @@ const FilterSidebar = ({ filters, onChange }: FilterSidebarProps) => {
                   max={10}
                   step={0.5}
                   value={[filters.minAiScore]}
-                  onValueChange={(v) => onChange({ ...filters, minAiScore: v[0] })}
+                  onValueChange={(v) =>
+                    onChange({ ...filters, minAiScore: v[0] })
+                  }
                 />
               </div>
               <div>
@@ -120,7 +146,9 @@ const FilterSidebar = ({ filters, onChange }: FilterSidebarProps) => {
                   max={10}
                   step={0.5}
                   value={[filters.minCommScore]}
-                  onValueChange={(v) => onChange({ ...filters, minCommScore: v[0] })}
+                  onValueChange={(v) =>
+                    onChange({ ...filters, minCommScore: v[0] })
+                  }
                 />
               </div>
             </div>
@@ -130,7 +158,7 @@ const FilterSidebar = ({ filters, onChange }: FilterSidebarProps) => {
         <button
           onClick={() =>
             onChange({
-              cgpaRange: [5, 10],
+              cgpaRange: [0, 10],
               college: "All Colleges",
               branch: "All Departments",
               skills: [],

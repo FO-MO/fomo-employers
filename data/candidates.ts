@@ -1,5 +1,6 @@
 export interface Candidate {
   id: string;
+  applicationId?: string | null;
   name: string;
   email?: string | null;
   college: string;
@@ -33,14 +34,20 @@ export const candidates: Candidate[] = [
     cgpa: 8.4,
     skills: ["SolidWorks", "AutoCAD", "MATLAB", "Python"],
     location: "Kollam, Kerala",
-    aiScores: { communication: 8.2, technical: 7.8, confidence: 8.5, overall: 8.2 },
+    aiScores: {
+      communication: 8.2,
+      technical: 7.8,
+      confidence: 8.5,
+      overall: 8.2,
+    },
     matchScore: 92,
     experience: "1 Internship",
     projects: 4,
     portfolio: "https://arjun.dev",
     avatar: "AN",
     strengths: ["Strong communication", "Design thinking", "Problem solving"],
-    summary: "Highly motivated mechanical engineering student with strong CAD skills and practical project experience. Demonstrates excellent communication and analytical abilities.",
+    summary:
+      "Highly motivated mechanical engineering student with strong CAD skills and practical project experience. Demonstrates excellent communication and analytical abilities.",
     collegePlacement: true,
   },
   {
@@ -51,14 +58,20 @@ export const candidates: Candidate[] = [
     cgpa: 9.1,
     skills: ["React", "TypeScript", "Python", "Node.js", "AWS"],
     location: "Kozhikode, Kerala",
-    aiScores: { communication: 9.0, technical: 9.2, confidence: 8.8, overall: 9.0 },
+    aiScores: {
+      communication: 9.0,
+      technical: 9.2,
+      confidence: 8.8,
+      overall: 9.0,
+    },
     matchScore: 97,
     experience: "2 Internships",
     projects: 7,
     portfolio: "https://priyasharma.dev",
     avatar: "PS",
     strengths: ["Full-stack development", "System design", "Leadership"],
-    summary: "Outstanding CS student with strong full-stack development skills. Has built production-grade applications and demonstrates exceptional technical depth.",
+    summary:
+      "Outstanding CS student with strong full-stack development skills. Has built production-grade applications and demonstrates exceptional technical depth.",
     collegePlacement: true,
   },
   {
@@ -69,13 +82,19 @@ export const candidates: Candidate[] = [
     cgpa: 8.7,
     skills: ["VHDL", "Embedded C", "Arduino", "PCB Design"],
     location: "Thiruvananthapuram, Kerala",
-    aiScores: { communication: 7.5, technical: 8.9, confidence: 7.8, overall: 8.1 },
+    aiScores: {
+      communication: 7.5,
+      technical: 8.9,
+      confidence: 7.8,
+      overall: 8.1,
+    },
     matchScore: 85,
     experience: "1 Internship",
     projects: 5,
     avatar: "RM",
     strengths: ["Hardware design", "Technical depth", "Research aptitude"],
-    summary: "Strong ECE student with hands-on embedded systems experience. Excels in hardware design and has published research in IoT applications.",
+    summary:
+      "Strong ECE student with hands-on embedded systems experience. Excels in hardware design and has published research in IoT applications.",
     collegePlacement: true,
   },
   {
@@ -86,14 +105,20 @@ export const candidates: Candidate[] = [
     cgpa: 8.9,
     skills: ["Java", "Spring Boot", "MySQL", "Docker", "Git"],
     location: "Thrissur, Kerala",
-    aiScores: { communication: 8.5, technical: 8.7, confidence: 9.0, overall: 8.7 },
+    aiScores: {
+      communication: 8.5,
+      technical: 8.7,
+      confidence: 9.0,
+      overall: 8.7,
+    },
     matchScore: 91,
     experience: "2 Internships",
     projects: 6,
     portfolio: "https://ananya.codes",
     avatar: "AK",
     strengths: ["Backend development", "Database design", "Team collaboration"],
-    summary: "Versatile backend developer with expertise in Java ecosystem. Strong problem-solver with excellent team collaboration skills.",
+    summary:
+      "Versatile backend developer with expertise in Java ecosystem. Strong problem-solver with excellent team collaboration skills.",
     collegePlacement: false,
   },
   {
@@ -104,13 +129,23 @@ export const candidates: Candidate[] = [
     cgpa: 7.8,
     skills: ["MATLAB", "Simulink", "Python", "Power Systems"],
     location: "Kozhikode, Kerala",
-    aiScores: { communication: 7.2, technical: 8.0, confidence: 7.5, overall: 7.6 },
+    aiScores: {
+      communication: 7.2,
+      technical: 8.0,
+      confidence: 7.5,
+      overall: 7.6,
+    },
     matchScore: 78,
     experience: "No Experience",
     projects: 3,
     avatar: "VP",
-    strengths: ["Analytical thinking", "Power systems knowledge", "Quick learner"],
-    summary: "Dedicated EEE student with solid foundation in power systems and simulation tools. Eager to apply theoretical knowledge in industry settings.",
+    strengths: [
+      "Analytical thinking",
+      "Power systems knowledge",
+      "Quick learner",
+    ],
+    summary:
+      "Dedicated EEE student with solid foundation in power systems and simulation tools. Eager to apply theoretical knowledge in industry settings.",
     collegePlacement: false,
   },
   {
@@ -121,13 +156,19 @@ export const candidates: Candidate[] = [
     cgpa: 8.2,
     skills: ["AutoCAD", "STAAD Pro", "Revit", "Project Management"],
     location: "Kottayam, Kerala",
-    aiScores: { communication: 8.8, technical: 7.5, confidence: 8.2, overall: 8.2 },
+    aiScores: {
+      communication: 8.8,
+      technical: 7.5,
+      confidence: 8.2,
+      overall: 8.2,
+    },
     matchScore: 84,
     experience: "1 Internship",
     projects: 4,
     avatar: "DT",
     strengths: ["Structural analysis", "Communication", "Project planning"],
-    summary: "Civil engineering student with practical construction site experience. Excellent communicator with strong project management skills.",
+    summary:
+      "Civil engineering student with practical construction site experience. Excellent communicator with strong project management skills.",
     collegePlacement: true,
   },
   {
@@ -138,14 +179,20 @@ export const candidates: Candidate[] = [
     cgpa: 9.4,
     skills: ["Python", "ML", "TensorFlow", "React", "Go"],
     location: "Kozhikode, Kerala",
-    aiScores: { communication: 9.2, technical: 9.5, confidence: 9.1, overall: 9.3 },
+    aiScores: {
+      communication: 9.2,
+      technical: 9.5,
+      confidence: 9.1,
+      overall: 9.3,
+    },
     matchScore: 98,
     experience: "3 Internships",
     projects: 10,
     portfolio: "https://adityaraj.ml",
     avatar: "AR",
     strengths: ["Machine learning", "Research", "Full-stack", "Open source"],
-    summary: "Exceptional CS student with deep ML expertise and open-source contributions. Has interned at top tech companies and published research papers.",
+    summary:
+      "Exceptional CS student with deep ML expertise and open-source contributions. Has interned at top tech companies and published research papers.",
     collegePlacement: false,
   },
   {
@@ -156,13 +203,19 @@ export const candidates: Candidate[] = [
     cgpa: 8.0,
     skills: ["Python", "IoT", "Raspberry Pi", "Signal Processing"],
     location: "Kollam, Kerala",
-    aiScores: { communication: 8.0, technical: 7.6, confidence: 7.9, overall: 7.8 },
+    aiScores: {
+      communication: 8.0,
+      technical: 7.6,
+      confidence: 7.9,
+      overall: 7.8,
+    },
     matchScore: 80,
     experience: "1 Internship",
     projects: 4,
     avatar: "MS",
     strengths: ["IoT development", "Signal processing", "Prototyping"],
-    summary: "ECE student with strong IoT project portfolio. Passionate about building connected devices and sensor-based systems.",
+    summary:
+      "ECE student with strong IoT project portfolio. Passionate about building connected devices and sensor-based systems.",
     collegePlacement: true,
   },
 ];
@@ -186,7 +239,21 @@ export const branches = [
 ];
 
 export const skillsList = [
-  "React", "Python", "Java", "TypeScript", "Node.js", "SolidWorks",
-  "AutoCAD", "MATLAB", "Docker", "AWS", "ML", "TensorFlow",
-  "Spring Boot", "Go", "IoT", "Embedded C", "VHDL",
+  "React",
+  "Python",
+  "Java",
+  "TypeScript",
+  "Node.js",
+  "SolidWorks",
+  "AutoCAD",
+  "MATLAB",
+  "Docker",
+  "AWS",
+  "ML",
+  "TensorFlow",
+  "Spring Boot",
+  "Go",
+  "IoT",
+  "Embedded C",
+  "VHDL",
 ];
